@@ -9,7 +9,7 @@
       label-position="left"
     >
       <div class="title-container">
-        <h3 class="title">后台管理系统</h3>
+        <h3 class="title">赛鸽 后台管理系统</h3>
       </div>
 
       <el-form-item prop="username">
@@ -83,7 +83,7 @@ export default {
     };
     return {
       loginForm: {
-        username: "admin",
+        username: "哈哈",
         password: "111111"
       },
       loginRules: {
@@ -123,36 +123,42 @@ export default {
       this.loading = true;
       //数据格式验证
       this.$refs.loginForm.validate(valid => {
+        // 格式通过 进行登录逻辑请求
         if (valid) {
-          localStorage.setItem("hasLogin", true);
-          this.$router.push({ path: "/" });
-        } else {
+            this.req({
+              url: "login",
+              data: {
+                account: that.loginForm.username,
+                psw: md5(that.loginForm.password + "*/-sz") //对密码进行加盐md5处理
+              },
+              method: "POST"
+            }).then(
+              // 可自定义登录时的逻辑处理
+              res => {
+                console.log("res :", res);
+                localStorage.setItem("hasLogin", true);
+                localStorage.setItem("token", res.data.token);
+                localStorage.setItem("userInfo", JSON.stringify(res.data.userInfo));
+                // 跳转后台管理页面
+                this.$router.push({ path: "/" });
+              },
+              err => {
+                console.log("err :", err);
+                this.passwordError = true;
+                this.loading = false;
+              }
+            );
+        } else { 
           console.log("验证失败");
+          // alert("请输入正确的用户名和密码");
+          that.Message({
+            message: '请输入正确的用户名和密码',
+            type: 'error',
+            duration: 2 * 1000
+          })
         }
       });
       return 0;
-      // 可自定义登录时的逻辑处理
-      this.req({
-        url: "login",
-        data: {
-          account: that.loginForm.username,
-          psw: md5(that.loginForm.password + "*/-sz") //对密码进行加盐md5处理
-        },
-        method: "POST"
-      }).then(
-        res => {
-          console.log("res :", res);
-          localStorage.setItem("hasLogin", true);
-          localStorage.setItem("token", res.data.token);
-          localStorage.setItem("userInfo", JSON.stringify(res.data.userInfo));
-          this.$router.push({ path: "/" });
-        },
-        err => {
-          console.log("err :", err);
-          this.passwordError = true;
-          this.loading = false;
-        }
-      );
     }
   }
 };
