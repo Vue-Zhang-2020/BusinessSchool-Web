@@ -1,8 +1,8 @@
 <template>
   <div :class="classObj" class="app-wrapper">
     <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside" />
-    <sidebar class="sidebar-container" />
-    <div class="main-container">
+    <sidebar :class="flag == 2 ? 'sidebar-containerBus' : 'sidebar-container'" />
+    <div :class="flag == 2 ? 'main-containerBus' : 'main-container'">
       <div :class="{'fixed-header':fixedHeader}">
         <navbar />
       </div>
@@ -21,6 +21,22 @@ export default {
     Navbar,
     Sidebar,
     AppMain
+  },
+  data() {
+    return {
+      flag: ''
+    }
+  },
+  beforeMount() {
+    this.flag = this.$store.getters.roles
+  },
+  beforeCreate() {
+    this.flag = this.$store.getters.roles
+  },
+  watch: {
+    $route(to,from){
+      this.flag = this.$store.getters.roles
+    }
   },
   mixins: [ResizeMixin],
   computed: {

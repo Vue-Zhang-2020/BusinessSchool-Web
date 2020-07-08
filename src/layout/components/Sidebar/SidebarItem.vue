@@ -54,7 +54,20 @@ export default {
     // To fix https://github.com/PanJiaChen/vue-admin-template/issues/237
     // TODO: refactor with render function
     this.onlyOneChild = null
-    return {}
+    return {
+      flag: ''
+    }
+  },
+  beforeMount() {
+    this.flag = this.$store.getters.roles
+  },
+  beforeCreate() {
+    this.flag = this.$store.getters.roles
+  },
+  watch: {
+    $route(to,from){
+      this.flag = this.$store.getters.roles
+    }
   },
   methods: {
     hasOneShowingChild(children = [], parent) {

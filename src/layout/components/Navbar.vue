@@ -5,13 +5,25 @@
     <breadcrumb class="breadcrumb-container" />
 
     <div class="right-menu">
-      <el-button @click="logout">退出登录</el-button>
+      <el-dropdown>
+        <span class="el-dropdown-link rows">
+          <img src="../../assets/page/mine.png" width="24" height="24" alt="">
+          <span class="right_title">学校管理员</span>
+          <i class="el-icon-arrow-down el-icon--right"></i>
+        </span>
+        <el-dropdown-menu slot="dropdown">
+          <el-dropdown-item command="modifyPass">
+            <span @click="logout">退出登录</span>
+          </el-dropdown-item>
+        </el-dropdown-menu>
+      </el-dropdown>
     </div>
   </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
+import store from '../../store'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
 
@@ -30,9 +42,9 @@ export default {
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
     },
-    async logout() {
-      localStorage.removeItem('hasLogin')
-      this.$router.push(`/login?redirect=${this.$route.fullPath}`)
+    logout() {
+      store.dispatch('FedLogOut').then(() => {})
+      this.$router.push(`redirect=/login`)
     }
   }
 }
@@ -59,6 +71,12 @@ export default {
     }
   }
 
+  .right_title {
+    margin-left: 8px;
+    font-size: 14px;
+    color: rgba($color: #000000, $alpha: 0.85);  
+  }
+
   .breadcrumb-container {
     float: left;
   }
@@ -68,9 +86,19 @@ export default {
     height: 100%;
     line-height: 50px;
     margin-right: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 
     &:focus {
       outline: none;
+    }
+
+    .rows {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      cursor: pointer;
     }
 
     .right-menu-item {

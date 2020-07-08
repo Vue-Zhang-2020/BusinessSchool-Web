@@ -30,81 +30,42 @@ import Layout from '@/layout'
  * a base page that does not have permission requirements
  * all roles can be accessed
  */
-export const constantRoutes = [{
+export const constantRoutes = [
+  {
+    path: '/',
+    component: () => import('@/layout/index'),
+    hidden: true
+  },
+
+  {
     path: '/login',
     component: () => import('@/views/login/index'),
     hidden: true
   },
 
   {
+    path: '/business',
+    component: () => import('@/layout/business'),
+    hidden: true
+  },
+
+  {
+    path: '/register',
+    component: () => import('@/views/login/register'),
+  },
+
+  {
     path: '/404',
     component: () => import('@/views/404'),
     hidden: true
-  },
-  // 素材管理
-  {
-    path: '/material',
-    component: Layout,
-    redirect: '/material/upload',
-    meta: {
-      title: '素材管理',
-      icon: 'plane'
-    },
-    children: [{
-        path: 'check-template',
-        name: 'check-template',
-        component: () => import('@/views/material/check-template'),
-        meta: {
-          title: '查看模板',
-        }
-      },
-      {
-        path: 'logo',
-        name: 'logo',
-        component: () => import('@/views/material/check-logo'),
-        meta: {
-          title: '查看logo',
-        }
-      },
-      {
-        path: 'generate',
-        name: 'generate',
-        component: () => import('@/views/material/generate'),
-        meta: {
-          title: '生成素材',
-        }
-      },
-      {
-        path: 'check',
-        name: 'check',
-        component: () => import('@/views/material/check'),
-        meta: {
-          title: '查看素材',
-        }
-      },
-    ]
-  },
-
-  //测试页面
-  {
-    path: '/',
-    component: Layout,
-    children: [{
-      path: 'test',
-      name: 'test',
-      component: () => import('@/views/test/test'),
-      meta: {
-        title: '测试',
-      }
-    }]
-  },
-  // 404 page must be placed at the end !!!
-  {
-    path: '*',
-    redirect: '/404',
-    hidden: true
   }
 ]
+
+export const notFoundRouter = [{
+  path: '*',
+  redirect: '/404',
+  hidden: true
+}, ]
 
 const createRouter = () => new Router({
   // mode: 'history', // require service support

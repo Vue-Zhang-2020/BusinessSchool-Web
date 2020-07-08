@@ -2,64 +2,52 @@ import axios from 'axios'
 import {
   Message
 } from 'element-ui'
-// create an axios instance
+import store from '@/store'
+import {
+  getToken
+} from '@/utils/auth'
+
+// 创建axios实例
 const service = axios.create({
-  baseURL: process.env.VUE_APP_BASE_API, // url = base url + request url
-  // withCredentials: true, // send cookies when cross-domain requests
-  timeout: 50000 // request timeout
+  baseURL: process.env.VUE_APP_BASE_API, // api的base_url
+  timeout: 15000 // 请求超时时间
 })
 
-// request interceptor
-service.interceptors.request.use(
-  config => {
-    // do something before request is sent
-    config.headers.token = localStorage.getItem('token')
-
-    return config
-  },
-  error => {
-    // do something with request error
-    console.log(error) // for debug
-    return Promise.reject(error)
+// request拦截器
+service.interceptors.request.use(config => {
+  if (store.getters.token) {
+    config.headers['Authorization'] = getToken() // 让每个请求携带自定义token 请根据实际情况自行修改
+    config.headers.post['Content-Type'] = 'application/json;charset=UTF-8'
   }
-)
+  return config
+}, error => {
+  // Do something with request error
+  console.log(error) // for debug
+  Promise.reject(error)
+})
 
-// response interceptor
+// respone拦截器
 service.interceptors.response.use(
-  /**
-   * If you want to get http information such as headers or status
-   * Please return  response => response
-   */
-
-  /**
-   * Determine the request status by custom code
-   * Here is just an example
-   * You can also judge the status by HTTP Status Code
-   */
   response => {
+    /**
+     * code为非401权限不足，非20001 表示登录错误,50000以上全是错误代码
+     */
     const res = response.data
-
-    // if the custom code is not 100, it is judged as an error.
-    if (res.code !== 200) {
+    if (response.status === 401 || res.code === 20002 || res.code === 401 || res.code > 50000) {
       Message({
-        message: res.msg || 'Error check your token or method',
+        message: res.message,
         type: 'error',
-        duration: 2 * 1000
+        duration: 5 * 1000
       })
-      return Promise.reject(new Error(res.msg || 'Error'))
+      return Promise.reject('error')
     } else {
-      return res
+      return response.data
     }
   },
   error => {
     console.log('err' + error) // for debug
-    Message({
-      message: error.message,
-      type: 'error',
-      duration: 2 * 1000
-    })
     return Promise.reject(error)
   }
 )
 
-export default service.request
+export default service

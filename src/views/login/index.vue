@@ -1,5 +1,8 @@
 <template>
   <div class="login-container">
+    <div class="login-top-box">
+      <img src="../../assets/icon.png" width="126" height="32" alt="">
+    </div>
     <el-form
       ref="loginForm"
       :model="loginForm"
@@ -8,82 +11,83 @@
       auto-complete="on"
       label-position="left"
     >
-      <div class="title-container">
-        <h3 class="title">赛鸽 后台管理系统</h3>
+      <div class="login_left">
+        <img class="login_left_img" width="383" height="543" src="../../assets/login/login.png" alt="">
       </div>
+      <div class="login_right">
+        <span class="pass_login">密码登录</span>
+        <div class="h_line"></div>
 
-      <el-form-item prop="username">
-        <span class="svg-container">
-          <svg-icon icon-class="user" />
-        </span>
-        <el-input
-          id="account"
-          ref="username"
-          v-model="loginForm.username"
-          placeholder="Username"
-          name="username"
-          type="text"
-          tabindex="1"
-          auto-complete="on"
-        />
-      </el-form-item>
+        <el-form-item style="margin-top: 22px" prop="username">
+          <el-input
+            id="account"
+            ref="username"
+            v-model="loginForm.username"
+            placeholder="Username"
+            name="username"
+            type="text"
+            tabindex="1"
+            auto-complete="on"
+          />
+        </el-form-item>
 
-      <el-form-item prop="password">
-        <span class="svg-container">
-          <svg-icon icon-class="password" />
-        </span>
-        <el-input
-          id="psw"
-          :key="passwordType"
-          ref="password"
-          v-model="loginForm.password"
-          :type="passwordType"
-          placeholder="Password"
-          name="password"
-          tabindex="2"
-          auto-complete="on"
-          @keyup.enter.native="handleLogin"
-        />
-        <span class="show-pwd" @click="showPwd">
-          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
-        </span>
-      </el-form-item>
-
-      <el-button
-        id="login_btn"
-        :loading="loading"
-        type="primary"
-        style="width:100%;margin-bottom:30px;"
-        @click.native.prevent="handleLogin"
-      >登录</el-button>
+        <el-form-item style="margin-top: 32px" prop="password">
+          <el-input
+            id="psw"
+            :key="passwordType"
+            ref="password"
+            v-model="loginForm.password"
+            :type="passwordType"
+            placeholder="Password"
+            name="password"
+            tabindex="2"
+            auto-complete="on"
+            @keyup.enter.native="handleLogin"
+          />
+          <span class="show-pwd" @click="showPwd">
+            <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
+          </span>
+        </el-form-item>
+        <el-checkbox class="login_check">
+          <span>记住密码</span>
+        </el-checkbox>
+        <p class="login_toast">密码不正确</p>
+        <el-button
+          id="login_btn"
+          :loading="loading"
+          type="primary"
+          style="width:100%;margin-bottom:30px;background:#222446;border: none"
+          @click.native.prevent="handleLogin"
+        >登录</el-button>
+      </div>
     </el-form>
-    <div class="info" style="bottom: 40px;">Beta: 1.0</div>
-    <div class="info">Technical Support: XXX</div>
   </div>
 </template>
 
 <script>
+import Cookies from 'js-cookie'
+import {Message} from 'element-ui'
 import md5 from "js-md5";
 export default {
   name: "Login",
   data() {
     const validateUsername = (rule, value, callback) => {
       if (value.length < 3) {
-        callback(new Error("Please enter the correct user name"));
+        callback(new Error("请输入有效的用户名"));
       } else {
         callback();
       }
     };
     const validatePassword = (rule, value, callback) => {
       if (value.length < 6) {
-        callback(new Error("The password can not be less than 6 digits"));
+        callback(new Error("密码必须大于6位"));
       } else {
         callback();
       }
     };
     return {
       loginForm: {
-        username: "哈哈",
+        username: "qwe",
         password: "111111"
       },
       loginRules: {
@@ -108,6 +112,10 @@ export default {
     }
   },
   methods: {
+    goRegister () {
+      localStorage.setItem("hasLogin", true);
+      this.$router.push('/register')
+    },
     showPwd() {
       if (this.passwordType === "password") {
         this.passwordType = "";
@@ -125,40 +133,68 @@ export default {
       this.$refs.loginForm.validate(valid => {
         // 格式通过 进行登录逻辑请求
         if (valid) {
-            this.req({
-              url: "login",
-              data: {
-                account: that.loginForm.username,
-                psw: md5(that.loginForm.password + "*/-sz") //对密码进行加盐md5处理
-              },
-              method: "POST"
-            }).then(
-              // 可自定义登录时的逻辑处理
-              res => {
-                console.log("res :", res);
-                localStorage.setItem("hasLogin", true);
-                localStorage.setItem("token", res.data.token);
-                localStorage.setItem("userInfo", JSON.stringify(res.data.userInfo));
-                // 跳转后台管理页面
-                this.$router.push({ path: "/" });
-              },
-              err => {
-                console.log("err :", err);
-                this.passwordError = true;
-                this.loading = false;
-              }
-            );
+          // this.$store.dispatch('Login', this.loginForm).then(() => {
+          //   this.loading = false
+          //   this.$router.push({ path: '/' })
+          // }).catch(() => {
+          //   this.loading = false
+          // })
+          // if (this.loginForm.username == 'qwe') {
+          //   this.loading = false
+          //   sessionStorage.setItem('role', '1')
+          //   Cookies.set('token', '9172731y28ihasdiasni')
+          //   this.$router.push({ path: '/' })
+          // } else if (this.loginForm.username == 'asd') {
+          //   this.loading = false
+          //   sessionStorage.setItem('role', '2')
+          //   Cookies.set('token', '9172731y28ihasdiasni')
+          //   this.$router.push({ path: '/business' })
+          // } else if (this.loginForm.username == 'zxc') {
+          //   this.loading = false
+          //   sessionStorage.setItem('role', '3')
+          //   Cookies.set('token', '9172731y28ihasdiasni')
+          //   this.$router.push({ path: '/' })
+          // }
+
+          sessionStorage.setItem('role', '2')
+          Cookies.set('token', '9172731y28ihasdiasni')
+          this.$router.push({ path: '/' })
+            
+            // this.req({
+            //   url: "login",
+            //   data: {
+            //     account: that.loginForm.username,
+            //     psw: md5(that.loginForm.password + "*/-sz") //对密码进行加盐md5处理
+            //   },
+            //   method: "POST"
+            // }).then(
+            //   // 可自定义登录时的逻辑处理
+            //   res => {
+            //     console.log("res :", res);
+            //     localStorage.setItem("hasLogin", true);
+            //     localStorage.setItem("token", res.data.token);
+            //     localStorage.setItem("userInfo", JSON.stringify(res.data.userInfo));
+            //     // 跳转后台管理页面
+            //     this.$router.push({ path: "/" });
+            //   },
+            //   err => {
+            //     console.log("err :", err);
+            //     this.passwordError = true;
+            //     this.loading = false;
+            //   }
+            // );
         } else { 
-          console.log("验证失败");
-          // alert("请输入正确的用户名和密码");
-          that.Message({
-            message: '请输入正确的用户名和密码',
-            type: 'error',
-            duration: 2 * 1000
-          })
+          // console.log("验证失败");
+          // // alert("请输入正确的用户名和密码");
+          // Message({
+          //   message: '请输入正确的用户名和密码',
+          //   type: 'warning',
+          //   duration: 2 * 1000
+          // })
+          console.log('error submit!!')
+          return false
         }
-      });
-      return 0;
+      })
     }
   }
 };
@@ -175,12 +211,13 @@ export default {
   color: gainsboro;
 }
 $bg: #283443;
-$light_gray: #fff;
-$cursor: #fff;
+$light_gray: #000000;
+$cursor: #000000;
 
 @supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
   .login-container .el-input input {
     color: $cursor;
+    width: 100%;
   }
 }
 
@@ -188,24 +225,26 @@ $cursor: #fff;
 .login-container {
   .el-input {
     display: inline-block;
-    height: 47px;
-    width: 85%;
+    height: 40px;
+    width: 100%;
 
     input {
-      background: transparent;
-      border: 0px;
+      background: #ffffff;
       -webkit-appearance: none;
-      border-radius: 0px;
+      border-radius: 2px;
+      border: 1px solid #EBEBEB;
       padding: 12px 5px 12px 15px;
       color: $light_gray;
-      height: 47px;
+      height: 40px;
       caret-color: $cursor;
-
-      &:-webkit-autofill {
-        box-shadow: 0 0 0px 1000px $bg inset !important;
-        -webkit-text-fill-color: $cursor !important;
-      }
     }
+  }
+
+  .login-top-box {
+    width: 100%;
+    padding: 16px 22px;
+    margin-bottom: 48px;
+    background-color: #ffffff;
   }
 
   .el-form-item {
@@ -218,7 +257,7 @@ $cursor: #fff;
 </style>
 
 <style lang="scss" scoped>
-$bg: #2d3a4b;
+$bg: #F2F3F7;
 $dark_gray: #889aa4;
 $light_gray: #eee;
 
@@ -230,11 +269,15 @@ $light_gray: #eee;
 
   .login-form {
     position: relative;
-    width: 520px;
+    width: 910px;
     max-width: 100%;
-    padding: 160px 35px 0;
+    margin: 48px 35px 0;
     margin: 0 auto;
     overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    border-radius: 4px;
+    box-shadow: 0px 2px 8px 0px rgba(0,0,0,0.08); 
   }
 
   .tips {
@@ -257,6 +300,51 @@ $light_gray: #eee;
     display: inline-block;
   }
 
+  .login_left {
+    width: 383px;
+    height: 543px;
+    float: left;
+  }
+
+  .login_right {
+    width: 542px;
+    height: 543px;
+    float: left;
+    padding: 95px 92px 92px 112px;
+    background-color: #ffffff;
+  }
+
+  .pass_login {
+    font-size: 18px;
+    color: rgba(0,0,0,0.85);
+    margin-left: 36px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #132343;
+  }
+
+  .h_line {
+    width: 100%;
+    height: 1px;
+    margin-top: 17px;
+    background-color: #EFEFEF;
+  }
+
+  .login_check span {
+    font-size: 12px;
+    color: rgba(0,0,0,0.85);
+  }
+
+  .login_toast {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 40px;
+    margin-bottom: 36px;
+    font-size: 16px;
+    color: #E23628;
+  }
+
   .title-container {
     position: relative;
 
@@ -271,8 +359,8 @@ $light_gray: #eee;
 
   .show-pwd {
     position: absolute;
-    right: 10px;
-    top: 7px;
+    right: 30px;
+    top: 0px;
     font-size: 16px;
     color: $dark_gray;
     cursor: pointer;
