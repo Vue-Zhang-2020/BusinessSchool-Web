@@ -51,13 +51,35 @@
               <img src="../../../../assets/page/modify.png" alt="">
             </div>
             <div class="course_line"></div>
-            <div class="delete-box" @click="showDeleteModal(course.id)">
+            <div class="delete-box" @click="showDeleteModal(course)">
               <img src="../../../../assets/page/delete.png" alt="">
             </div>
           </div>
         </div>
       </div>
     </el-scrollbar>
+    <el-pagination
+      background
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page.sync="currentPage"
+      :page-sizes="[8, 12, 16, 20]"
+      :page-size='pagesize'
+      layout="sizes, prev, pager, next"
+      :total="total"
+      class="marginT22">
+    </el-pagination>
+    <!-- 删除提示 -->
+    <el-dialog
+      title="提示"
+      :visible.sync="deleteDialog"
+      width="40%">
+      <span>{{ deleteTitle }}</span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="deleteDialog = false">取 消</el-button>
+        <el-button type="primary" @click="deleteTeachingPlan">确 认</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -69,6 +91,9 @@ export default {
       total: 0,
       currentPage: 1,
       pagesize: 8,
+      deleteTitle: '',
+      deleteDialog: false,
+      deleteTeachingPlanId: '',
       teachingPlanSearch: '', // 搜索
       teachingPlanStatus: '全部', // 计划状态
       teachingPlanJsonData: [],
@@ -82,6 +107,12 @@ export default {
     teachingSearch() {
 
     },
+    handleSizeChange(val) {
+      this.requestTeachingPlanJsonData() 
+    },
+    handleCurrentChange(val) {
+      this.requestTeachingPlanJsonData()
+    },
     // 制定教学计划
     insertTeachingPlan() {
       this.$router.push({ path: '/teaching/plan/enact' })
@@ -93,13 +124,13 @@ export default {
       } else {
         switch (e) {
           case '进行中':
-            this.requestTeachingPlanJsonData(2)
+            this.requestTeachingPlanStatusJsonData(2)
             break;
           case '未开始':
-            this.requestTeachingPlanJsonData(1)
+            this.requestTeachingPlanStatusJsonData(1)
             break;
           case '已结束':
-            this.requestTeachingPlanJsonData(3)
+            this.requestTeachingPlanStatusJsonData(3)
             break;
         }
       }
@@ -114,6 +145,39 @@ export default {
         this.teachingPlanJsonData = res.data.data.data
       })
     },
+    // 获取筛选课程列表
+    requestTeachingPlanStatusJsonData(flag) {
+      this.$axios.post(this.$global.sApi + '/eventlist', JSON.stringify({
+        'type': 2,
+        'status': flag
+      })).then(res => {
+        this.teachingPlanJsonData = res.data.data.data
+      })
+    },
+    // 显示删除
+    showDeleteModal(obj) {
+      this.deleteTeachingPlanId = obj.id
+      if (obj.status == '2') {
+        this.deleteTitle = '该教学计划已经在进行中，若删除课程将全部记录会删除掉'
+      } else {
+        this.deleteTitle = '确定要删除该教学计划吗'
+      }
+      this.deleteDialog = true
+    },
+    // 删除计划
+    deleteTeachingPlan() {
+      this.$axios.post(this.$global.sApi + '/eventlist', JSON.stringify({
+        'type': 4,
+        'id': parseInt(this.deleteTeachingPlanId)
+      })).then(res => {
+        this.$message({
+          message: '删除成功',
+          type: 'success'
+        })
+        this.deleteDialog = false
+        this.requestTeachingPlanJsonData()
+      })
+    }
   }
 }
 </script>

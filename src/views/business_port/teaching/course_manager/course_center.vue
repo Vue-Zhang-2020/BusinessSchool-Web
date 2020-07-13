@@ -187,7 +187,7 @@ export default {
   name: '',
   data () {
     return {
-      total: 400,
+      total: 0,
       currentPage: 1,
       pagesize: 8,
       courseSearch: '', // 课程搜索
