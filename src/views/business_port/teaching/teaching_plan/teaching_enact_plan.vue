@@ -174,7 +174,7 @@
     </div>
     <div v-if="!insertObj" class="business-bottom-box">
       <div class="business-control">
-        <el-button class="blue-btn-back">  返回  </el-button>
+        <el-button class="blue-btn-back" @click="toBack">  返回  </el-button>
         <el-button class="blue-btn-two" style="margin-bottom: 0;">  预览  </el-button>
         <el-button class="blue-btn" style="margin-bottom: 0;" @click="submitTeachingPlan('teachingForm')">  发布  </el-button>
       </div>
@@ -680,6 +680,9 @@ export default {
         this.clickClasses = ''
         this.clickMajor = ''
       })
+    },
+    toBack() {
+      this.$router.push({ path: '/teaching/plan/list' })
     }
   }
 }
