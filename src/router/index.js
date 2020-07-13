@@ -44,8 +44,8 @@ export const constantRoutes = [
   },
 
   {
-    path: '/business',
-    component: () => import('@/layout/business'),
+    path: '/index',
+    component: () => import('@/layout/index'),
     hidden: true
   },
 

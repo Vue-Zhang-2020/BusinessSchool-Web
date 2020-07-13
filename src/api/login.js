@@ -1,12 +1,12 @@
 import request from '@/utils/request'
 
-export function login(username, password) {
+export function login(usernumber, userpass) {
   return request({
-    url: '/auth/login',
+    url: '/scadmin',
     method: 'post',
     data: {
-      username,
-      password
+      usernumber,
+      userpass
     }
   })
 }

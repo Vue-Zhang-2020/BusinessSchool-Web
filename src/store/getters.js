@@ -9,5 +9,7 @@ const getters = {
   tRouters: state => state.user.tRouters,
   visitedViews: state => state.tagsView.visitedViews,
   cachedViews: state => state.tagsView.cachedViews,
+  pathRouter: state => state.user.pathRouter,
+  schoolId: state => state.user.schoolId
 }
 export default getters

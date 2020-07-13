@@ -11,6 +11,14 @@ import App from './App'
 import store from './store'
 import router from './router'
 import request from '@/utils/request'
+import axios from './utils/axios-interceptors'
+import {formatDate} from './utils/formatDate'
+
+axios.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8'
+Vue.prototype.$axios = axios
+
+import global from './utils/global'
+Vue.prototype.$global = global
 
 import '@/icons' // icon
 import '@/permission' // permission control

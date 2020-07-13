@@ -8,6 +8,7 @@ import {
 } from '@/utils/auth'
 
 // 创建axios实例
+axios.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8'
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // api的base_url
   timeout: 15000 // 请求超时时间
@@ -33,9 +34,9 @@ service.interceptors.response.use(
      * code为非401权限不足，非20001 表示登录错误,50000以上全是错误代码
      */
     const res = response.data
-    if (response.status === 401 || res.code === 20002 || res.code === 401 || res.code > 50000) {
+    if (response.status == '401' || response.status == '500' || response.status == '20002' || response.status == '401' || response.status > '50000') {
       Message({
-        message: res.message,
+        message: response.msg,
         type: 'error',
         duration: 5 * 1000
       })

@@ -1,113 +1,120 @@
 <template>
   <div class="box-model-page">
-    <span class="top-title">学生成绩管理</span>
-    <div class="top-control">
-      <el-button icon="el-icon-plus" class="blue-btn" @click="showInserModal">添加学生资料</el-button>
-      <el-button icon="el-icon-plus" class="blue-btn-two" @click="showBatchModal">批量录入学生资料</el-button>
-    </div>
-    <el-row class="screen-box">
-      <el-col class="row" :span="6">
-        <label class="label-titile">专业</label>
-        <el-select v-model="major" placeholder="全部" @change="majorSelect">
-          <el-option
-            v-for="item in options"
-            :key="item.id"
-            :label="item.majorName"
-            :value="item.id">
-          </el-option>
-        </el-select>
-      </el-col>
-      <el-col class="row" :span="6">
-        <label class="label-titile">班级</label>
-        <el-select v-model="classes" placeholder="全部" @change="classesSelect">
-          <el-option
-            v-for="item in options"
-            :key="item.id"
-            :label="item.majorName"
-            :value="item.id">
-          </el-option>
-        </el-select>
-      </el-col>
-      <el-col class="row" :span="12">
-        <el-input v-model="searchContent" style="width: 50%" placeholder="请输入要搜索的内容"></el-input>
-        <el-button class="search-btn">搜索</el-button>
-      </el-col>
-    </el-row>
-    <el-row>
-      <el-col :span="4">
-        <el-tree :data="data" :props="defaultProps" @node-click="handleNodeClick" :render-content="renderContent"></el-tree>
-      </el-col>
-      <el-col :span="1">
-        <div class="s_line"></div>
-      </el-col>
-      <el-col class="table-box" :span="19">
-        <el-table
-          :data="tableData"
-          style="width: 100%; margin-left: 35px;">
-          <el-table-column
-            prop="date"
-            label="序号"
-            width="80">
-            <template slot-scope="scope"><span>{{scope.$index+(currentPage - 1) * pagesize + 1}} </span></template>
-          </el-table-column>
-          <el-table-column
-            prop="name"
-            label="学生姓名"
-            width="120">
-          </el-table-column>
-          <el-table-column
-            prop="major"
-            label="专业"
-            width="140">
-          </el-table-column>
-          <el-table-column
-            prop="birthday"
-            label="出生年月"
-            width="110">
-          </el-table-column>
-          <el-table-column
-            prop="grade"
-            label="年级"
-            width="100">
-          </el-table-column>
-          <el-table-column
-            prop="classes"
-            label="班级"
-            width="150">
-          </el-table-column>
-          <el-table-column
-            prop="number"
-            label="人数"
-            width="80">
-          </el-table-column>
-          <el-table-column
-            label="操作">
-            <template slot-scope="scope"> 
-              <div class="contrl-box">
-                <span class="control-span">编辑</span>
-                <div class="h_line"></div>
-                <span class="control-span">查看</span>
-                <div class="h_line"></div>
-                <span class="control-span">删除</span>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-pagination
-          background
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          :current-page.sync="currentPage"
-          :page-sizes="[5, 10, 15, 20]"
-          :page-size='pagesize'
-          layout="sizes, prev, pager, next"
-          :total="total"
-          class="table-pagina">
-        </el-pagination>
-      </el-col>
-    </el-row>
+    <el-scrollbar style="height: 100%">
+      <span class="top-title">学生资料管理</span>
+      <div class="top-control">
+        <el-button icon="el-icon-plus" class="blue-btn" @click="showInserModal(0, '', 0)">添加学生资料</el-button>
+        <el-button icon="el-icon-plus" class="blue-btn-two" @click="showBatchModal">批量录入学生资料</el-button>
+      </div>
+      <div>
+        <el-row class="screen-box">
+          <el-col class="row" :span="6">
+            <label class="label-titile">专业</label>
+            <el-select v-model="major" :clearable="true" @clear="clearMajor" placeholder="全部" @change="majorSelect">
+              <el-option
+                v-for="item in majorOptions"
+                :key="item.id"
+                :label="item.proname"
+                :value="item.id">
+              </el-option>
+            </el-select>
+          </el-col>
+          <el-col class="row" :span="6">
+            <label class="label-titile">班级</label>
+            <el-select v-model="classes" :clearable="true" @clear="clearClasses" placeholder="全部" @change="classesSelect">
+              <el-option
+                v-for="item in classesOptions"
+                :key="item.id"
+                :label="item.classname"
+                :value="item.id">
+              </el-option>
+            </el-select>
+          </el-col>
+          <el-col class="row" :span="12">
+            <el-input v-model="searchContent" style="width: 50%" placeholder="请输入要搜索的内容"></el-input>
+            <el-button class="search-btn">搜索</el-button>
+          </el-col>
+        </el-row>
+      </div>
+      <el-row>
+        <el-col :span="4">
+          <el-tree :data="studentJsonData" :props="defaultProps" @node-click="handleNodeClick" :render-content="renderContent"></el-tree>
+        </el-col>
+        <el-col :span="1">
+          <div class="s_line"></div>
+        </el-col>
+        <el-col class="table-box" :span="19">
+          <el-table
+            :data="studentInfoJsonData"
+            style="width: 100%; margin-left: 35px;">
+            <el-table-column
+              prop="date"
+              label="序号"
+              width="80">
+              <template slot-scope="scope"><span>{{scope.$index+(currentPage - 1) * pagesize + 1}} </span></template>
+            </el-table-column>
+            <el-table-column
+              prop="username"
+              label="学生姓名"
+              width="120">
+            </el-table-column>
+            <el-table-column
+              prop="proname"
+              label="专业"
+              width="140">
+            </el-table-column>
+            <el-table-column
+              label="出生年月"
+              width="110">
+              <template slot-scope="scope">
+                <span>{{scope.row.age.substring(2, scope.row.age.indexOf('月') + 1)}}</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="live"
+              label="年级"
+              width="100">
+            </el-table-column>
+            <el-table-column
+              prop="classname"
+              label="班级"
+              width="150">
+            </el-table-column>
+            <!-- <el-table-column
+              prop="number"
+              label="人数"
+              width="80">
+            </el-table-column> -->
+            <el-table-column
+              label="操作">
+              <template slot-scope="scope"> 
+                <div class="contrl-box">
+                  <span class="control-span" @click="showInserModal(scope.$index, scope.row, 1)">编辑</span>
+                  <div class="h_line"></div>
+                  <span class="control-span">查看</span>
+                  <div class="h_line"></div>
+                  <span class="control-span" @click="showDeleteModal(scope.$index, scope.row)">删除</span>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-col>
+      </el-row>
+    </el-scrollbar>
+    <el-pagination
+      background
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page.sync="currentPage"
+      :page-sizes="[5, 10, 15, 20]"
+      :page-size='pagesize'
+      layout="sizes, prev, pager, next"
+      :total="total"
+      class="table-pagina"
+      style="margin-right: 0;">
+    </el-pagination>
     <!-- 添加学生资料 -->
-    <el-dialog title="添加学生资料" width="40%" :visible.sync="insertSingleStudentInfoDialog">
+    <el-dialog :title="insertOrModifyModel === 0 ? '添加学生资料' : '编辑学生资料'" width="40%" :visible.sync="insertSingleStudentInfoDialog">
       <el-form :model="studentInfoForm" :rules="rules" ref="studentForm">
         <el-form-item label="姓名：" prop="name" :label-width="formLabelWidth">
           <el-input v-model="studentInfoForm.name" style="width: 37%" placeholder="请输入" autocomplete="off"></el-input>
@@ -115,9 +122,9 @@
         <el-form-item label="专业：" prop="major" :label-width="formLabelWidth">
           <el-select v-model="studentInfoForm.major" style="width: 37%" placeholder="请选择" @change="formMajorSelect">
             <el-option
-              v-for="item in options"
+              v-for="item in majorOptions"
               :key="item.id"
-              :label="item.majorName"
+              :label="item.proname"
               :value="item.id">
             </el-option>
           </el-select>
@@ -126,32 +133,33 @@
           <el-date-picker
             style="width: 60%"
             v-model="studentInfoForm.birthday"
+            :clearable="false"
             type="date"
             placeholder="请选择日期">
           </el-date-picker>
         </el-form-item>
         <el-form-item label="年级："  prop="grade" :label-width="formLabelWidth">
-          <el-select v-model="studentInfoForm.grade" style="width: 50%" placeholder="请选择" @change="formMajorSelect">
+          <el-select v-model="studentInfoForm.grade" style="width: 50%" placeholder="请选择">
             <el-option
-              v-for="item in options"
+              v-for="item in gradeOptions"
               :key="item.id"
-              :label="item.majorName"
+              :label="item.grade"
               :value="item.id">
             </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="班级：" prop="classes" :label-width="formLabelWidth">
-          <el-select v-model="studentInfoForm.classes" style="width: 37%" placeholder="请选择" @change="formMajorSelect">
+          <el-select v-model="studentInfoForm.classes" value-key="id" style="width: 37%" placeholder="请选择" @change="formClassesSelect">
             <el-option
-              v-for="item in options"
+              v-for="item in majorOptions"
               :key="item.id"
-              :label="item.majorName"
-              :value="item.id">
+              :label="item.proname"
+              :value="item">
             </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="联系方式：" prop="photo" :label-width="formLabelWidth">
-          <el-input v-model="studentInfoForm.photo" style="width: 60%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input v-model="studentInfoForm.photo" maxlength="11" style="width: 60%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -199,30 +207,72 @@
         <el-button type="primary" @click="batchDialog = false">确认添加</el-button>
       </span>
     </el-dialog>
+    <!-- 删除提示 -->
+    <el-dialog
+      title="提示"
+      :visible.sync="deleteStudentDialog"
+      width="40%">
+      <span>确认删除此学生吗?</span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="deleteStudentDialog = false">取 消</el-button>
+        <el-button type="primary" @click="deleteStudent()">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import {formatDate} from '../../../utils/formatDate'
 export default {
   name: 'info',
   data () {
     return {
+      schoolId: 0, // 学校Id
       major: '', // 专业
+      clickMajor: '',
       classes: '', // 班级
-      total: 100,
+      clickClasses: '',
+      deleteStudentId: '', // 删除学生Id
+      insertOrModifyModel: 0,  // 0 添加 1 编辑
+      total: 0,
       currentPage: 1,
       pagesize: 5,
       loading: false,
       searchContent: '', // 搜索内容
-      insertSingleStudentInfoDialog: false,
+      insertSingleStudentInfoDialog: false, // 添加单个学生 Dailog
+      deleteStudentDialog: false, // 删除Dialog
       batchDialog: false,
       formLabelWidth: '120px',
+      gradeOptions: [ // 年级Json
+        {
+          id: '1',
+          grade: '一年级'
+        },
+        {
+          id: '2',
+          grade: '二年级'
+        },
+        {
+          id: '3',
+          grade: '三年级'
+        },
+        {
+          id: '4',
+          grade: '四年级'
+        },
+        {
+          id: '5',
+          grade: '五年级'
+        }
+      ],
+      birthday: '',
       studentInfoForm: { // 学生Form
+        id: '',
         name: '',
         major: '',
         birthday: '',
         grade: '',
-        classes: '',
+        classes: {},
         photo: ''
       },
       rules: {
@@ -245,92 +295,187 @@ export default {
           { required: true, message: '请输入联系方式', trigger: 'blur' }
         ]
       },
-      options: [ // 模拟数据
-        {
-          id: '1',
-          majorName: '软件工程'
-        },
-        {
-          id: '2',
-          majorName: '建筑工程'
-        }
-      ],
-      data: [{
-          label: '东莞中职院',
-          children: [{
-            label: '计算机专业',
-            children: [
-              {
-                label: '计算机专业1班'
-              },
-              {
-                label: '计算机专业2班'
-              }
-            ]
-          }]
-        }, {
-          label: '软件专业',
-          children: [{
-            label: '软件专业2',
-            children: [{
-              label: '软件专业3'
-            }]
-          }, {
-            label: '软件专业 2-2',
-            children: [{
-              label: '软件专业 2-2-1'
-            }]
-          }]
-        }
-      ],
+      majorOptions: [], // 专业数据
+      classesOptions: [], // 学校数据
+      studentInfoJsonData: [], // 学生资料
+      studentJsonData: [], // 学校数据
       defaultProps: {
-        children: 'children',
-        label: 'label'
-      },
-      tableData: [
-        {
-          id: '1',
-          name: '张三',
-          major: '软件工程',
-          birthday: '20年7月',
-          grade: '大三',
-          classes: '计算机1班',
-          number: '99'
-        }
-      ]
-
+        children: 'classinfo',
+        label: 'classname'
+      }
     }
+  },
+  created() {
+    this.schoolId = this.$store.getters.schoolId
+    this.requestStudentInfoJsonData()
+    this.requestSchoolJsonData()
+    this.requestMajorJsonData()
+    this.requestClassesJsonData()
   },
   methods: {
     handleSizeChange(val) {
-      console.log(`每页 ${val} 条`);
+      this.requestStudentInfoJsonData()
     },
     handleCurrentChange(val) {
-      console.log(`当前页: ${val}`);
+      this.requestStudentInfoJsonData()
     },
     // 添加学生资料
-    showInserModal() {
+    showInserModal(index, row, flag) {
+      this.insertOrModifyModel = flag
+      if (this.insertOrModifyModel === 1) {
+        this.studentInfoForm.id = row.id
+        this.studentInfoForm.name = row.username
+        this.studentInfoForm.major = row.proname
+        this.studentInfoForm.birthday = this.stringToDate(row.age)
+        this.studentInfoForm.grade = row.live
+        this.studentInfoForm.classes.proname = row.classname
+        this.studentInfoForm.photo = row.phone
+      }
       this.insertSingleStudentInfoDialog = true
+    },
+    // 时间格式化
+    stringToDate(str) {
+      var year = str.substring(0, str.indexOf('年'))
+      var month = str.substring(str.indexOf('年') + 1, str.indexOf('月'))
+      var day = str.substring(str.indexOf('月') + 1, str.indexOf('日'))
+      let date = `${year}-${month}-${day}`
+      return new Date(date)
+    },
+    // 清空专业筛选
+    clearMajor() {
+      this.major = ''
+      this.classesOptions = []
+      this.classes = ''
+      this.requestStudentInfoJsonData()
+    },
+    // 清空班级筛选
+    clearClasses() {
+      if (this.major != '') {
+        this.requestFilterJsonData()
+      } else {
+        this.requestStudentInfoJsonData()
+      }
     },
     // 批量录入学生资料
     showBatchModal() {
       this.batchDialog = true
     },
+    // 筛选条件查询
+    requestFilterJsonData() {
+      this.$axios.post(this.$global.sApi + '/findstu', JSON.stringify({
+        'proinfoid': parseInt(this.major)|'',
+        'classinfoid': parseInt(this.classes)|''
+      })).then(res => {
+        // this.total = res.data.data.total
+        const json = res.data.data[0]
+        if (json.length > 0) {
+          this.studentInfoJsonData = json
+        }
+      })
+    },
+    requestFilterClickJsonData() {
+      this.$axios.post(this.$global.sApi + '/findstu', JSON.stringify({
+        'proinfoid': parseInt(this.clickMajor)|'',
+        'classinfoid': parseInt(this.clickClasses)|''
+      })).then(res => {
+        // this.total = res.data.data.total
+        const json = res.data.data[0]
+        if (json.length > 0) {
+          this.studentInfoJsonData = json
+        }
+      })
+    },
+    // 获取学生资料列表
+    requestStudentInfoJsonData() {
+      this.$axios.post(this.$global.sApi + '/liststu', JSON.stringify({
+        'classinfoid': 2,
+        'majorId': this.major,
+        'classesId': this.classes,
+        'current_page': this.currentPage,
+        'perpage': this.pagesize,
+      })).then(res => {
+        this.total = res.data.data.total
+        const json = res.data.data.data
+        if (json.length > 0) {
+          this.studentInfoJsonData = json
+        }
+      })
+    },
+    // 获取学校数据
+    requestSchoolJsonData() {
+      this.$axios.post(this.$global.sApi + '/navigation', JSON.stringify({
+        'scinfoid': this.schoolId
+      })).then(res => {
+        const json = res.data.data[0]
+        if (json.length > 0) {
+          this.studentJsonData = json
+        }
+      })
+    },
+    // 获取专业列表
+    requestMajorJsonData() {
+      this.$axios.post(this.$global.sApi + '/prolistall', JSON.stringify({
+        'scinfoid': this.schoolId
+      })).then(res => {
+        const json = res.data.data[0]
+        if (json.length > 0) {
+          this.majorOptions = json
+        }
+      })
+    },
+    // 获取班级列表
+    requestClassesJsonData() {
+      this.$axios.post(this.$global.sApi + '/findclass', JSON.stringify({
+        'proinfoid': parseInt(this.major)
+      })).then(res => {
+        const json = res.data.data[0]
+        this.classesOptions = json
+      })
+    },
+    // 显示删除学生 Dialog
+    showDeleteModal(index, row) {
+      this.deleteStudentId = row.id
+      this.deleteStudentDialog = true
+    },
+    // 删除学生信息
+    deleteStudent() {
+      this.$axios.post(this.$global.sApi + '/addstuinfo', JSON.stringify({
+        'stuinfoid': parseInt(this.deleteStudentId),
+        type: 3
+      })).then(res => {
+        this.$message({
+          message: '删除成功',
+          type: 'success'
+        })
+        this.deleteStudentDialog = false
+        this.requestStudentInfoJsonData()
+      })
+    },
     // 专业选择
     majorSelect() {
-
+      this.requestFilterJsonData()
+      this.requestClassesJsonData()
     },
     // 班级选择
     classesSelect() {
-
+      this.requestFilterJsonData()
     },
     // 表单专业选择
     formMajorSelect() {
 
     },
+    // 表单班级选择
+    formClassesSelect(e) {
+      console.log(e)
+    },
     // 院校专业菜单
     handleNodeClick(data) {
-      console.log(data);
+      if (typeof data.classinfo === "object") {
+        this.clickMajor = data.id
+      } else {
+        this.clickClasses = data.id
+      }
+      this.requestFilterClickJsonData()
     },
     // 树形菜单
     renderContent(h,{node,data,store}) {
@@ -345,7 +490,7 @@ export default {
     downloadModal() {
       // 加载loading
       this.loading = true
-      this.$axios.post('', JSON.stringify({}))
+      this.$axios.get(this.$global.sApi + '/article/批量导入模板.xlsx')
       .then((res) => {
         // 关闭loading
         this.loading = false
@@ -398,6 +543,7 @@ export default {
         ret = 'success';
         return ret
       }
+      this.loading = false
       return ret;
     },
     uploadImg(fileObj) {
@@ -406,9 +552,8 @@ export default {
       if (fileStatus === 'success') {
         let formData = new FormData();
         formData.append("file", fileObj.file);
-        formData.append("id", this.compeSelect);
-        formData.append("gameUrl", this.gameUrl);
-        this.$axios.post(this.$global.proUrl + '/uploadingFile', formData, {
+        formData.append("scinfoid", this.schoolId);
+        this.$axios.post(this.$global.sApi + '/exclein', formData, {
           headers: {
             "Content-type": "multipart/form-data"
           }
@@ -424,18 +569,68 @@ export default {
           message: fileStatus,
           type: 'error'
         })
+        this.loading = false
       }
     },
+    // 提交
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          this.insertSingleStudentInfoDialog = false
-          this.$refs[formName].resetFields();
+          if (this.insertOrModifyModel === 0) {
+            this.insertStudentInfoApi(formName)
+          } else {
+            this.modifyStudentInfoApi(formName) 
+          }
         } else {
           return false;
         }
       });
     },
+    // 添加学生资料
+    insertStudentInfoApi(formName) {
+      this.$axios.post(this.$global.sApi + '/addstuinfo', JSON.stringify({
+        'username': this.studentInfoForm.name,
+        'age': formatDate(this.studentInfoForm.birthday, 'yyyy年MM月dd日'),
+        'live': this.studentInfoForm.grade,
+        'classname': this.studentInfoForm.classes.proname,
+        'classinfoid': parseInt(this.studentInfoForm.classes.id),
+        'scinfoid': this.schoolId,
+        'phone': this.studentInfoForm.photo,
+        'type': 1
+      })).then(res => {
+        this.insertSingleStudentInfoDialog = false
+        this.$refs[formName].resetFields();
+        this.$message({
+          message: '添加成功',
+          type: 'success'
+        })
+        this.requestStudentInfoJsonData()
+      })
+    },
+    // 编辑学生资料
+    modifyStudentInfoApi() {
+      this.$axios.post(this.$global.sApi + '/addstuinfo', JSON.stringify({
+        'stuinfoid': parseInt(this.studentInfoForm.id),
+        'username': this.studentInfoForm.name,
+        'age': formatDate(this.studentInfoForm.birthday, 'yyyy年MM月dd日'),
+        'live': this.studentInfoForm.grade,
+        'classname': this.studentInfoForm.classes.proname,
+        'classinfoid': parseInt(this.studentInfoForm.classes.id),
+        'phone': this.studentInfoForm.photo,
+        'scinfoid': this.schoolId,
+        'type': 2
+      })).then(res => {
+        console.log(res)
+        this.insertSingleStudentInfoDialog = false
+        this.studentInfoForm = {}
+        this.$refs[formName].resetFields();
+        this.$message({
+          message: '编辑成功',
+          type: 'success'
+        })
+        this.requestStudentInfoJsonData()
+      })
+    }
   }
 }
 </script>

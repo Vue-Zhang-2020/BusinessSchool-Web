@@ -1,5 +1,6 @@
 import _import from "@/utils/_import"
 import Layout from '@/layout'
+import RouterView from '../layout/components/AppMainBus'
 import Vue from 'vue'
 import router from "../router"
 export default function (routers) {
@@ -14,6 +15,8 @@ export const filterAsyncRouter = (routers) => {
           Vue.set(route, 'alwaysShow', true)
         }
         route.component = Layout
+      } else if (route.component == 'RouterView') {
+        route.component = RouterView
       } else {
         route.component = _import(route.component)
       }

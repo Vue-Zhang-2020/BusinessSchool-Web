@@ -1,5 +1,5 @@
 <template>
-  <section class="app-main">
+  <section :class="flag == '2' ? 'app-mainBus' : 'app-main'">
     <div class="main-box">
       <div v-if="flag == '2' & path" class="business-box">
         <div class="business-left-nav">
@@ -26,6 +26,7 @@ export default {
       path: false,
       routePath: '/home',
       routers : [],
+      once: true,
       defaultProps: {
         children: 'children',
         label: 'meta.title'
@@ -33,6 +34,10 @@ export default {
     }
   },
   beforeMount() {
+    let toPath = sessionStorage.getItem('pathTo')
+    if (toPath !== null) {
+      this.checkResetRouter(toPath)
+    }
     this.flag = this.$store.getters.roles
   },
   beforeCreate() {
@@ -40,23 +45,9 @@ export default {
   },
   watch: {
     $route(to,from){
-      if ((to.path + '') === '/home' || (to.path + '') === '/home/home') {
-        this.path = false
-      } else {
-        this.path = true
-      }
-      let q = to.path.indexOf("/")
-      let w = to.path.indexOf("/", q + 1)
-      if (to.path + '' !== '/home' && to.path + '' !== '/home/home') {
-        if (w > -1) {
-          this.routePath = to.path.substring(0, w)
-        } else {
-          this.routePath = to.path
-        }
-        console.log('获取到的路径：' +this.routePath)
-        this.routers = []
-        if (this.routePath != '/home') this.resetRouters(this.routePath)
-      }
+      sessionStorage.setItem('pathTo', to.path)
+      this.$store.commit("SET_PATH_ROUTER", to.path);
+      this.checkResetRouter(to.path + '')
       this.flag = this.$store.getters.roles
     }
   },
@@ -65,7 +56,39 @@ export default {
       return this.$route.path
     }
   },
+  mounted() {
+    // this.listenPage()
+  },
   methods: {
+    listenPage() {
+      window.onbeforeunload = function (e) {
+        e = e || window.event;
+        if (e) {
+          e.returnValue = '关闭提示';
+        }
+        return '关闭提示';
+      };
+    },
+    checkResetRouter(to) {
+      // console.log(`传递过来:${to}`)
+      if ((to + '') === '/home' || (to + '') === '/home/home') {
+        this.path = false
+      } else {
+        this.path = true
+      }
+      let q = to.indexOf("/")
+      let w = to.indexOf("/", q + 1)
+      if (to + '' !== '/home' && to + '' !== '/home/home') {
+        if (w > -1) {
+          this.routePath = to.substring(0, w)
+        } else {
+          this.routePath = to
+        }
+        // console.log('获取到的路径：' +this.routePath)
+        this.routers = []
+        if (this.routePath != '/home') this.resetRouters(this.routePath)
+      } 
+    },
     handleNodeClick(data) {
       this.$router.push({ path: data.path })
     },
@@ -101,12 +124,22 @@ export default {
   padding: 16px;
 }
 
+.app-mainBus {
+  /*50 = navbar  */
+  min-height: calc(100vh - 50px);
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: #f2f3f7;
+}
+
 .main-box {
   display: flex;
   flex-direction: row;
 }
 .left-mar {
-  margin-left: 130px;
+  width: 100%;
+  margin-left: 156px;
 }
 .fixed-header+.app-main {
   padding-top: 50px;

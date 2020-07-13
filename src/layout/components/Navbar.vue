@@ -44,7 +44,8 @@ export default {
     },
     logout() {
       store.dispatch('FedLogOut').then(() => {})
-      this.$router.push(`redirect=/login`)
+      console.log('1')
+      this.$router.push(`/login`)
     }
   }
 }

@@ -23,7 +23,7 @@
             id="account"
             ref="username"
             v-model="loginForm.username"
-            placeholder="Username"
+            placeholder="账号"
             name="username"
             type="text"
             tabindex="1"
@@ -38,7 +38,7 @@
             ref="password"
             v-model="loginForm.password"
             :type="passwordType"
-            placeholder="Password"
+            placeholder="密码"
             name="password"
             tabindex="2"
             auto-complete="on"
@@ -51,7 +51,7 @@
         <el-checkbox class="login_check">
           <span>记住密码</span>
         </el-checkbox>
-        <p class="login_toast">密码不正确</p>
+        <p class="login_toast">{{loginResponse}}</p>
         <el-button
           id="login_btn"
           :loading="loading"
@@ -59,6 +59,9 @@
           style="width:100%;margin-bottom:30px;background:#222446;border: none"
           @click.native.prevent="handleLogin"
         >登录</el-button>
+        <!-- <el-button
+          @click="login"
+        >登录</el-button> -->
       </div>
     </el-form>
   </div>
@@ -79,16 +82,16 @@ export default {
       }
     };
     const validatePassword = (rule, value, callback) => {
-      if (value.length < 6) {
-        callback(new Error("密码必须大于6位"));
+      if (value.length < 5) {
+        callback(new Error("密码必须大于5位"));
       } else {
         callback();
       }
     };
     return {
       loginForm: {
-        username: "qwe",
-        password: "111111"
+        username: "",
+        password: ""
       },
       loginRules: {
         username: [
@@ -100,7 +103,8 @@ export default {
       },
       loading: false,
       passwordType: "password",
-      redirect: undefined
+      redirect: undefined,
+      loginResponse: ''
     };
   },
   watch: {
@@ -126,6 +130,12 @@ export default {
         this.$refs.password.focus();
       });
     },
+    // login() {
+    //   sessionStorage.setItem('role', '2')
+    //   Cookies.set('token', '9172731y28ihasdiasni')
+    //   sessionStorage.setItem('token', '9172731y28ihasdiasni')
+    //   this.$router.push({ path: '/' })
+    // },
     handleLogin() {
       let that = this;
       this.loading = true;
@@ -133,65 +143,17 @@ export default {
       this.$refs.loginForm.validate(valid => {
         // 格式通过 进行登录逻辑请求
         if (valid) {
-          // this.$store.dispatch('Login', this.loginForm).then(() => {
-          //   this.loading = false
-          //   this.$router.push({ path: '/' })
-          // }).catch(() => {
-          //   this.loading = false
-          // })
-          // if (this.loginForm.username == 'qwe') {
-          //   this.loading = false
-          //   sessionStorage.setItem('role', '1')
-          //   Cookies.set('token', '9172731y28ihasdiasni')
-          //   this.$router.push({ path: '/' })
-          // } else if (this.loginForm.username == 'asd') {
-          //   this.loading = false
-          //   sessionStorage.setItem('role', '2')
-          //   Cookies.set('token', '9172731y28ihasdiasni')
-          //   this.$router.push({ path: '/business' })
-          // } else if (this.loginForm.username == 'zxc') {
-          //   this.loading = false
-          //   sessionStorage.setItem('role', '3')
-          //   Cookies.set('token', '9172731y28ihasdiasni')
-          //   this.$router.push({ path: '/' })
-          // }
-
-          sessionStorage.setItem('role', '2')
-          Cookies.set('token', '9172731y28ihasdiasni')
-          this.$router.push({ path: '/' })
-            
-            // this.req({
-            //   url: "login",
-            //   data: {
-            //     account: that.loginForm.username,
-            //     psw: md5(that.loginForm.password + "*/-sz") //对密码进行加盐md5处理
-            //   },
-            //   method: "POST"
-            // }).then(
-            //   // 可自定义登录时的逻辑处理
-            //   res => {
-            //     console.log("res :", res);
-            //     localStorage.setItem("hasLogin", true);
-            //     localStorage.setItem("token", res.data.token);
-            //     localStorage.setItem("userInfo", JSON.stringify(res.data.userInfo));
-            //     // 跳转后台管理页面
-            //     this.$router.push({ path: "/" });
-            //   },
-            //   err => {
-            //     console.log("err :", err);
-            //     this.passwordError = true;
-            //     this.loading = false;
-            //   }
-            // );
+          this.$store.dispatch('Login', this.loginForm).then(response => {
+            sessionStorage.setItem('token', response.data[0].api_token)
+            sessionStorage.setItem('roles', response.data[0].power)
+            this.loading = false
+            this.$router.push({ path: '/' })
+          }).catch(() => {
+            this.loading = false
+          })
         } else { 
-          // console.log("验证失败");
-          // // alert("请输入正确的用户名和密码");
-          // Message({
-          //   message: '请输入正确的用户名和密码',
-          //   type: 'warning',
-          //   duration: 2 * 1000
-          // })
           console.log('error submit!!')
+          this.loading = false
           return false
         }
       })

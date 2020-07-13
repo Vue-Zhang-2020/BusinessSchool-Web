@@ -1,6 +1,6 @@
 module.exports = {
 
-  title: 'Vue+Element UI后台管理模板',
+  title: '商管院',
 
   /**
    * @type {boolean} true | false
