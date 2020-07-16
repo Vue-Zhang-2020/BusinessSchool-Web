@@ -59,9 +59,7 @@
           style="width:100%;margin-bottom:30px;background:#222446;border: none"
           @click.native.prevent="handleLogin"
         >登录</el-button>
-        <!-- <el-button
-          @click="login"
-        >登录</el-button> -->
+        <!-- <el-button @click="test">测试</el-button> -->
       </div>
     </el-form>
   </div>
@@ -130,6 +128,9 @@ export default {
         this.$refs.password.focus();
       });
     },
+    test() {
+      this.$axios.post(this.$global.sApi + '/test3', JSON.stringify({'id': 11})).then(res => {console.log('success')}).catch(err => {console.log(err)})
+    },
     // login() {
     //   sessionStorage.setItem('role', '2')
     //   Cookies.set('token', '9172731y28ihasdiasni')
@@ -149,6 +150,10 @@ export default {
             this.loading = false
             this.$router.push({ path: '/' })
           }).catch(() => {
+            this.$message({
+              message: '服务器繁忙，登录失败',
+              type: 'error'
+            })
             this.loading = false
           })
         } else { 
@@ -172,7 +177,7 @@ export default {
   text-align: center;
   color: gainsboro;
 }
-$bg: #283443;
+$bg: #F2F3F7 !important;
 $light_gray: #000000;
 $cursor: #000000;
 
@@ -187,18 +192,18 @@ $cursor: #000000;
 .login-container {
   .el-input {
     display: inline-block;
-    height: 40px;
-    width: 100%;
+    height: 40px !important;
+    width: 100% !important;
 
     input {
-      background: #ffffff;
+      background: #ffffff !important;
       -webkit-appearance: none;
-      border-radius: 2px;
-      border: 1px solid #EBEBEB;
-      padding: 12px 5px 12px 15px;
-      color: $light_gray;
-      height: 40px;
-      caret-color: $cursor;
+      border-radius: 2px !important;
+      border: 1px solid #EBEBEB !important;
+      padding: 12px 5px 12px 15px !important;
+      color: $light_gray !important;
+      height: 40px !important;
+      caret-color: $cursor !important;
     }
   }
 
@@ -211,15 +216,13 @@ $cursor: #000000;
 
   .el-form-item {
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.1);
+    background: #F2F3F7;
     border-radius: 5px;
     color: #454545;
   }
 }
-</style>
 
-<style lang="scss" scoped>
-$bg: #F2F3F7;
+$bg: #F2F3F7 !important;
 $dark_gray: #889aa4;
 $light_gray: #eee;
 

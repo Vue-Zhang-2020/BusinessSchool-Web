@@ -69,7 +69,7 @@
     <el-dialog :title="insertOrModifyModel == 0 ? '添加班级' : '编辑班级'" :visible.sync="insertDialog">
       <el-form :model="classForm" :rules="rules" ref="classForm">
         <el-form-item label="班级名称：" prop="className" :label-width="formLabelWidth">
-          <el-input v-model="classForm.className" style="width: 80%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input v-model="classForm.className" style="width: 80%" maxlength="40" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="班级专业：" prop="classMajor" :label-width="formLabelWidth">
           <el-select v-model="classForm.classMajor" placeholder="请选择">
@@ -82,13 +82,13 @@
           </el-select>
         </el-form-item>
         <el-form-item label="班级人数：" prop="classPerson" :label-width="formLabelWidth">
-          <el-input v-model="classForm.classPerson" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input v-model="classForm.classPerson" type="number" maxlength="4" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input>
           <span>  人</span>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="insertDialog = false">取 消</el-button>
-        <el-button type="primary" @click="submitForm('classForm')">确定添加</el-button>
+        <el-button type="primary" @click="submitForm('classForm')">{{ insertOrModifyModel == 0 ? '确认添加' : '确认编辑' }}</el-button>
       </div>
     </el-dialog>
   </div>
@@ -152,8 +152,22 @@ export default {
     this.schoolId = this.$store.getters.schoolId
     this.requestClassesJsonData()
   },
+  watch: {
+    insertDialog(val) {
+      if (!val) {
+        this.$refs.classForm.resetFields();
+        this.classForm = {
+          classId: '',
+          className: '',
+          classMajor: '',
+          classPerson: ''
+        }
+      }
+    }
+  },
   methods: {
     handleSizeChange(val) {
+      this.pagesize = val
       this.requestClassesJsonData()
     },
     handleCurrentChange(val) {
@@ -162,13 +176,12 @@ export default {
     // 显示添加Dialog
     showInserModal(index, row, flag) {
       this.insertOrModifyModel = flag
+      this.requestMajorJsonData()
       if (flag === 1) {
         this.classForm.classId = row.id
         this.classForm.className = row.classname
-        this.classForm.classMajor = row.classnum
-        this.classForm.classPerson = row.proname
-      } else {
-        this.requestMajorJsonData()
+        this.classForm.classMajor = row.proname
+        this.classForm.classPerson = row.classnum
       }
       this.insertDialog = true
     },
@@ -200,9 +213,7 @@ export default {
       })).then(res => {
         const json = res.data.data.data
         this.total = res.data.data.total
-        if (json.length > 0) {
-          this.classesJsonData = json
-        }
+        this.classesJsonData = json
       })
     },
     // 添加班级
@@ -230,7 +241,7 @@ export default {
         'classname': this.classForm.className,
         'classnum': parseInt(this.classForm.classPerson),
         'proname': parseInt(this.classForm.classMajor),
-        'type': 2
+        'type': 3
       })).then(res => {
         console.log(res)
         this.insertDialog = false
@@ -263,9 +274,7 @@ export default {
         'scinfoid': this.schoolId
       })).then(res => {
         const json = res.data.data[0]
-        if (json.length > 0) {
-          this.majorOptions = json
-        }
+        this.majorOptions = json
       })
     }
   }

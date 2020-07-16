@@ -213,6 +213,11 @@ export default {
   align-items: unset;
 }
 
+.box-model-page .el-row {
+  display: block !important;
+  margin-top: 0 !important;
+}
+
 .box-model-page {
   width: 97.5%;
   height: 95%;
@@ -231,6 +236,7 @@ export default {
 }
 .top-control {
   margin-top: 16px;
+  margin-bottom: 24px;
 }
 
 // button
@@ -398,8 +404,8 @@ export default {
 }
 
 .table-box {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .table-pagina {
@@ -480,7 +486,7 @@ label {
 }
 
 .screen-box {
-  margin-bottom: 24px;
+  margin-bottom: 24px !important;
 }
 
 .contrl-box {
@@ -511,7 +517,7 @@ label {
 }
 
 .el-tree-node__content {
-  height: 30px;
+  height: 30px !important;
 }
 
 .h_line {
@@ -522,10 +528,17 @@ label {
 }
 
 .s_line {
-  width: 1px;
-  height: 100%;
-  position: absolute;
-  background-color: #E8E8E8;
-  margin: 0 15px;
+  width: 1px !important;
+  height: 100% !important;
+  position: absolute !important;
+  background-color: #E8E8E8 !important;
+  margin: 0 15px !important;
+}
+
+.folder-box {
+  width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 </style>

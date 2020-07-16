@@ -79,7 +79,7 @@
         class="marginT22">
       </el-pagination>
     <!-- 添加/编辑 -->
-    <el-dialog :title="insertOrModifyModel == 0 ? '新增合作企业' : '编辑合作企业'" class="dialog-modal" :visible.sync="insertDialog">
+    <el-dialog :title="insertOrModifyModel == 0 ? '新增合作学校' : '编辑合作学校'" class="dialog-modal" :visible.sync="insertDialog">
       <el-form :model="schoolForm" :rules="rules" ref="classForm">
         <el-form-item label="名称：" prop="schoolName" :label-width="formLabelWidth">
           <el-input v-model="schoolForm.schoolName" style="width: 40%" placeholder="请输入" autocomplete="off"></el-input>
@@ -93,7 +93,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="insertDialog = false">取 消</el-button>
-        <el-button type="primary" @click="submitForm('classForm')">确定添加</el-button>
+        <el-button type="primary" @click="submitForm('classForm')">{{ insertOrModifyModel == 0 ? '确认添加' : '确认编辑' }}</el-button>
       </div>
     </el-dialog>
     <!-- 查看Dialog -->
@@ -172,12 +172,26 @@ export default {
   watch: {
     lookDialog(old) {
       if (!old) {
-        this.schoolForm = {}
+        this.schoolForm = {
+          schoolId: '',
+          schoolName: '',
+          schoolAccount: '',
+          schoolPassword: '',
+          schoolPerson: '',
+          schoolMajorData: []
+        }
       }
     },
     insertDialog(old) {
       if (!old) {
-        this.schoolForm = {}
+        this.schoolForm = {
+          schoolId: '',
+          schoolName: '',
+          schoolAccount: '',
+          schoolPassword: '',
+          schoolPerson: '',
+          schoolMajorData: []
+        }
       }
     }
   },
@@ -189,10 +203,12 @@ export default {
     handleCurrentChange(val) {
       this.requestCoopeSchoolJsonData()
     },
-    // 改变企业状态
+    // 改变学校状态
     changeUnitStatus(index, row, e) {
       this.$axios.post(this.$global.sApi + '/addcom', JSON.stringify({
-        'unitId': row.id
+        'id': row.id,
+        'type': 5,
+        'status': row.status === false ? 1 : 2
       })).then(res => {
         this.$message({
           message: '操作成功',
@@ -242,12 +258,12 @@ export default {
     showLookModal(index, row) {
       this.$axios.post(this.$global.sApi + '/addscuser', JSON.stringify({
         'type': 4,
-        'id': this.schoolId
+        'id': row.id
       })).then(res => {
         this.schoolForm.schoolName = row.scname
         this.schoolForm.schoolPerson = row.sumnum
         this.schoolForm.schoolAccount = row.usernumber
-        this.schoolForm.schoolPassword = row.usernumber
+        this.schoolForm.schoolPassword = row.userpass
         this.schoolForm.schoolMajorData = res.data.data[0].proinf
         this.lookDialog = true
       })
@@ -275,7 +291,7 @@ export default {
         'scnameid': this.schoolId,
         'scname': this.schoolForm.schoolName,
         'userpass': this.schoolForm.schoolPassword,
-        'id': parseInt(this.schoolForm.id),
+        'id': parseInt(this.schoolForm.schoolId),
         'type': 2
       })).then(res => {
         console.log(res)

@@ -54,7 +54,7 @@
           <div class="top-control" style="margin-top: 0;">
             <el-row style="margin-top: 16px; margin-bottom: 24px;">
               <el-col class="row" :span="12">
-                <el-button icon="el-icon-plus" class="blue-btn" style="margin-bottom: 0;" @click="showInserModal(0)">添加新的考试</el-button>
+                <el-button icon="el-icon-plus" class="blue-btn" style="margin-bottom: 0;" @click="showInserModal(0, '')">添加新的考试</el-button>
               </el-col>
               <el-col class="row" style="justify-content: flex-end;" :span="12">
                 <el-input v-model="examSearch" style="width: 50%" placeholder="请输入要搜索的内容"></el-input>
@@ -65,7 +65,7 @@
         </div>
         <div class="business-course-status">
           <span>状态：</span>
-          <el-radio-group v-model="courseStatus" fill="#6A6FCB" size="small">
+          <el-radio-group v-model="courseStatus" @change="statusChange" fill="#6A6FCB" size="small">
             <el-radio-button name="0" label="全部"></el-radio-button>
             <el-radio-button name="0" label="进行中"></el-radio-button>
             <el-radio-button name="0" label="未开始"></el-radio-button>
@@ -81,12 +81,11 @@
               <span>{{ exam.testname }}</span>
             </div>
             <div class="business-course-bottom">
-              <!-- <div class="modify-box" @click="showInserModal(1)"> -->
-              <div class="modify-box">
+              <div class="modify-box" @click="showInserModal(1, exam)">
                 <img src="../../../../assets/page/modify.png" alt="">
               </div>
               <div class="course_line"></div>
-              <div class="delete-box" @click="showDeleteModal()">
+              <div class="delete-box" @click="showDeleteModal(exam)">
                 <img src="../../../../assets/page/delete.png" alt="">
               </div>
             </div>
@@ -98,7 +97,7 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page.sync="currentPage"
-        :page-sizes="[5, 10, 15, 20]"
+        :page-sizes="[8, 12, 16, 20]"
         :page-size='pagesize'
         layout="sizes, prev, pager, next"
         :total="total"
@@ -125,6 +124,17 @@
       <span slot="footer" class="dialog-footer">
         <el-button @click="deleteDialog = false">取 消</el-button>
         <el-button type="primary" @click="deleteDialog = false">确 认</el-button>
+      </span>
+    </el-dialog>
+    <!-- 删除提示 -->
+    <el-dialog
+      title="提示"
+      :visible.sync="affirmDeleteDialog"
+      width="40%">
+      <span>确定要删除此考试吗？</span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="affirmDeleteDialog = false">取 消</el-button>
+        <el-button type="primary" @click="affirmDeleteExam">确 认</el-button>
       </span>
     </el-dialog>
     <!-- 关闭提示 -->
@@ -175,14 +185,17 @@ export default {
         }
       ],
       total: 0,
+      deleteExamId: 0,
       currentPage: 1,
       pagesize: 8,
+      status: 0,
       examSearch: '', // 考试搜索
       courseStatus: '全部', // 课程状态
       insertOrModifyModal: false,
       deleteDialog: false,
       modifyDialog: false,
       successDialog: false,
+      affirmDeleteDialog: false,
       modifyTitle: 0, // 0 添加 1 修改
       formLabelWidth: '150px',
       count: 3,
@@ -223,45 +236,70 @@ export default {
   },
   created() {
     this.requestExamJsonData()
+    if (this.$route.query.type !== 'undefined' && this.$route.query.type === 1) {
+      this.insertOrModifyModal = true
+    }
   },
   methods: {
     handleSizeChange(val) {
-      
+      this.pagesize = val
+      this.requestExamJsonData()
     },
     handleCurrentChange(val) {
-      
+      this.requestExamJsonData()
     },
     // 显示删除Dialog
-    showDeleteModal() {
-      this.deleteDialog = true
+    showDeleteModal(exam) {
+      if (exam.status == '2') {
+        this.deleteDialog = true
+      } else {
+        this.deleteExamId = parseInt(exam.id)
+        this.affirmDeleteDialog = true
+      }
+    },
+    affirmDeleteExam() {
+      this.$axios.post(this.$global.sApi + '/addtest', JSON.stringify({
+        'type': 3,
+        'id': this.deleteExamId
+      })).then(res => {
+        this.$message({
+          message: '删除成功',
+          type: 'success'
+        })
+        this.affirmDeleteDialog = false
+        this.requestExamJsonData()
+      })
     },
     // 显示添加课程Dialog
-    showInserModal(flag) {
+    showInserModal(flag, obj) {
       if (flag === 1) {
         this.modifyDialog = true
+        this.examForm.examId = obj.id
+        this.examForm.examName = obj.testname
+        this.examForm.examImg = obj.testheader
+        this.examForm.examDesc = obj.brief
+        this.examForm.examTime = obj.testtime
+        this.examForm.examLevel[0].integral = obj.pointss[0]
+        this.examForm.examLevel[1].integral = obj.pointss[1]
+        this.examForm.examLevel[2].integral = obj.pointss[2]
+        this.examForm.examLevel[3].integral = obj.pointss[3]
+        this.examForm.examLevel[4].integral = obj.pointss[4]
       } else {
         this.modifyTitle = flag
         this.insertOrModifyModal = true
       }
     },
     searchExam() {
-      this.requestSearchExamJsonData()
-    },
-    // 搜索
-    requestSearchExamJsonData() {
-      this.$axios.post(this.$global.sApi + '/addtest', JSON.stringify({
-        'type': 5,
-        'testname': this.examSearch
-      })).then(res => {
-        this.examJsonData = res.data.data[0]
-      })
+      this.requestExamJsonData()
     },
     // 获取考试列表
     requestExamJsonData() {
       this.$axios.post(this.$global.sApi + '/addtest', JSON.stringify({
         'type': 4,
         'current_page': this.currentPage,
-        'perpage': this.pagesize
+        'perpage': this.pagesize,
+        'status': this.status,
+        'testname': this.examSearch
       })).then(res => {
         this.examJsonData = res.data.data.data
         this.total = res.data.data.total
@@ -319,10 +357,6 @@ export default {
           }
         }).then(res => {
           // this.registerForm.imageUrl = res
-          this.$message({
-            message: '提交成功',
-            type: 'success'
-          })
           this.examForm.examImg = res.data.path
           this.loading = false
         })
@@ -336,7 +370,7 @@ export default {
     submitModify(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          
+          this.modifyExamApi()
         }
       })
     },
@@ -346,6 +380,27 @@ export default {
           this.insertExamApi()
         }
       })
+    },
+    statusChange(e) {
+      if (e === '全部') {
+        this.status = 0
+        this.requestExamJsonData()
+      } else {
+        switch (e) {
+          case '进行中':
+            this.status = 2
+            this.requestExamJsonData()
+            break;
+          case '未开始':
+            this.status = 1
+            this.requestExamJsonData()
+            break;
+          case '已结束':
+            this.status = 3
+            this.requestExamJsonData()
+            break;
+        }
+      }
     },
     // 添加考试
     insertExamApi() {
@@ -359,6 +414,25 @@ export default {
         'testheader': this.examForm.examImg,
         'brief': this.examForm.examDesc,
         'testtime': parseInt(this.examForm.examTime),
+        'points': integrals.substring(0, integrals.length - 1)
+      })).then(res => {
+        this.successDialog = true
+        this.countDown()
+      })
+    },
+    // 编辑考试
+    modifyExamApi() {
+      var integrals = ''
+      this.examForm.examLevel.forEach(element => {
+        integrals += element.integral + ','
+      });
+      this.$axios.post(this.$global.sApi + '/addtest', JSON.stringify({
+        'type': 2,
+        'id': parseInt(this.examForm.examId),
+        'testname': this.examForm.examName,
+        'testheader': this.examForm.examImg,
+        'brief': this.examForm.examDesc == '' ? '暂无' : this.examForm.examDesc,
+        'testtime': this.examForm.examTime == '' ? '暂无' : this.examForm.examTime,
         'points': integrals.substring(0, integrals.length - 1)
       })).then(res => {
         this.successDialog = true

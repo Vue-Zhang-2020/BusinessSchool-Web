@@ -36,11 +36,15 @@ router.beforeEach((to, from, next) => {
     if (whiteList.indexOf(to.path) !== -1) {
       next()
     } else {
-      NProgress.done()
-      store.dispatch('FedLogOut').then(() => {
-        Message.error('身份失效,请重新登录')
+      if (to.path === '/') {
         next({ path: '/login' })
-      })
+      } else {
+        store.dispatch('FedLogOut').then(() => {
+          Message.error('身份失效,请重新登录')
+          next({ path: '/login' })
+        })
+      }
+      NProgress.done()
     }
   }
 })

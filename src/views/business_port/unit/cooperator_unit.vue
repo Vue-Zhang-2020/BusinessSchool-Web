@@ -79,10 +79,10 @@
         <el-form-item label="企业头像：" v-if="insertOrModifyModel === 0" prop="teachingPlanImg" :label-width="formLabelWidth">
           <el-upload
             class="avatar-uploader"
-            action="https://jsonplaceholder.typicode.com/posts/"
+            action
             :show-file-list="false"
-            :on-success="handleAvatarSuccess"
-            :before-upload="beforeAvatarUpload">
+            multiple
+            :http-request="uploadImg">
             <img v-if="unitForm.unitImg" :src="unitForm.unitImg" class="avatar">
             <i v-else class="el-icon-plus avatar-uploader-icon"></i>
           </el-upload>        
@@ -97,13 +97,13 @@
           <el-input v-model="unitForm.unitScale" type="number" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input><span>   人</span>
         </el-form-item>
         <el-form-item label="企业介绍：" prop="unitMsg" :label-width="formLabelWidth">
-          <el-input type="textarea" v-model="unitForm.unitMsg" style="width: 60%;" :rows="4"></el-input>
+          <el-input type="textarea" v-model="unitForm.unitMsg" style="width: 60%;"></el-input>
         </el-form-item> 
         <el-form-item label="初始账号：" prop="unitAccount" :label-width="formLabelWidth">
-          <el-input v-model="unitForm.unitAccount" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
+          <el-input v-model="unitAccount" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="初始密码：" prop="unitPassword" :label-width="formLabelWidth">
-          <el-input v-model="unitForm.unitPassword" style="width: 40%" placeholder="8-20位必须包含数字及字母" autocomplete="off"></el-input>
+          <el-input v-model="unitPassword" style="width: 40%" placeholder="8-20位必须包含数字及字母" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -115,7 +115,7 @@
     <el-dialog title="合作企业详情" class="dialog-modal" :visible.sync="lookDialog" style="margin-top: -60px;">
       <el-form :model="unitForm" :rules="rules" ref="classForm">
         <el-form-item label="企业头像：" :label-width="formLabelWidth">
-          <img width="104" height="104" src="../../../assets/img.jpg" alt="" style="padding: 8px;border: 1px solid rgba(0,0,0,0.15);border-radius: 2px;">     
+          <img width="104" height="104" :src="unitForm.header" alt="" style="padding: 8px;border: 1px solid rgba(0,0,0,0.15);border-radius: 2px;">     
         </el-form-item>
         <el-form-item label="企业名称：" :label-width="formLabelWidth">
           <span class="unit-span">{{unitForm.unitName}}</span>
@@ -155,6 +155,8 @@ export default {
       lookDialog: false,
       formLabelWidth: '110px',
       insertOrModifyModel: 0, // 0 insert 1 modify
+      unitAccount: '',
+      unitPassword: '',
       unitForm: {
         unitId: '',
         unitImg: '',
@@ -188,13 +190,39 @@ export default {
   watch: {
     lookDialog(old) {
       if (!old) {
-        this.unitForm = {}
+        this.unitForm = {
+          unitId: '',
+          unitImg: '',
+          unitName: '',
+          unitManager: '',
+          unitScale: '',
+          unitMsg: '',
+          unitAccount: '',
+          unitPassword: ''
+        }
       }
     },
     insertDialog(old) {
       if (!old) {
-        this.unitForm = {}
+        this.unitForm = {
+          unitId: '',
+          unitImg: '',
+          unitName: '',
+          unitManager: '',
+          unitScale: '',
+          unitMsg: '',
+          unitAccount: '',
+          unitPassword: ''
+        }
       }
+    },
+    unitAccount() {
+      this.unitAccount = this.unitAccount.replace(/[\W]/g,'')
+      this.unitForm.unitAccount = this.unitAccount
+    },
+    unitPassword() {
+      this.unitPassword = this.unitPassword.replace(/[\W]/g,'')
+      this.unitForm.unitPassword = this.unitPassword
     }
   },
   created() {
@@ -211,8 +239,11 @@ export default {
     },
     // 改变企业状态
     changeUnitStatus(index, row, e) {
+      console.log(row.status)
       this.$axios.post(this.$global.sApi + '/addcom', JSON.stringify({
-        'unitId': row.id
+        'id': row.id,
+        'type': 5,
+        'status': row.status === false ? 1 : 2
       })).then(res => {
         this.$message({
           message: '操作成功',
@@ -229,9 +260,7 @@ export default {
       })).then(res => {
         const json = res.data.data.data
         this.total = res.data.data.currentPage
-        if (json.length > 0) {
-          this.classesJsonData = json
-        }
+        this.classesJsonData = json
       })
     },
     // 显示编辑Dialog
@@ -240,11 +269,11 @@ export default {
       if (this.insertOrModifyModel === 1) {
         this.unitForm.unitId = row.id
         this.unitForm.unitName = row.comname
-        // this.unitForm.unitManager = row
+        this.unitForm.unitManager = row.work
         this.unitForm.unitScale = row.num
-        // this.unitForm.unitMsg = row
+        this.unitForm.unitMsg = row.brief
         this.unitForm.unitAccount = row.usernumber
-        // this.unitForm.unitPassword = row
+        this.unitForm.unitPassword = row.userpass
       }
       this.insertDialog = true
     },
@@ -264,11 +293,11 @@ export default {
     },
     // 显示查看Dialog
     showLookModal(index, row) {
-      this.unitForm.unitImg = row
+      this.unitForm.unitImg = row.header
       this.unitForm.unitName = row.comname
-      this.unitForm.unitManager = row 
+      this.unitForm.unitManager = row.work
       this.unitForm.unitScale = row.num
-      this.unitForm.unitMsg = row
+      this.unitForm.unitMsg = row.brief
       this.unitForm.unitAccount = row.usernumber
       this.unitForm.unitPassword = row.userpass
       this.lookDialog = true
@@ -282,7 +311,7 @@ export default {
         'work': this.unitForm.unitManager,
         'comname': this.unitForm.unitName,
         'num': this.unitForm.unitScale,
-        'imageUrl': this.unitForm.unitImg,
+        'header': this.unitForm.unitImg,
         'type': 1
       })).then(res => {
         this.insertDialog = false
@@ -316,21 +345,62 @@ export default {
         this.requestCoopeUnitJsonData()
       })
     },
-    // 上传图片
-    handleAvatarSuccess(res, file) {
-        this.unitForm.unitImg = URL.createObjectURL(file.raw);
+    // 前端校验文件上传是否符合条件
+    file_info_check (file) {
+      var ret = ''
+      if (file === undefined) {
+        ret = ''
+      }
+      // eslint-disable-next-line camelcase
+      var max_file_size = 2 * 1024 * 1024
+      // eslint-disable-next-line camelcase
+      if (file.size > max_file_size) {
+        ret = '文件不能大于2Mb'
+      }
+      var typeJpg = '.jpg'
+      var typeJpeg = '.jpeg'
+      var typePng = '.png'
+      if (file.name.indexOf(typeJpg) === -1) {
+        ret = '文件格式要求是.jpg/.jpeg/.png'
+      } else {
+        ret = 'success'
+        return ret
+      }
+      if (file.name.indexOf(typeJpeg) === -1) {
+        ret = '文件格式要求是.jpg/.jpeg/.png'
+      } else {
+        ret = 'success'
+        return ret
+      }
+      if (file.name.indexOf(typePng) === -1) {
+        ret = '文件格式要求是.jpg/.jpeg/.png'
+      } else {
+        ret = 'success'
+        return ret
+      }
+      return ret
     },
-    beforeAvatarUpload(file) {
-      const isJPG = file.type === 'image/jpeg';
-      const isLt2M = file.size / 1024 / 1024 < 2;
-
-      if (!isJPG) {
-        this.$message.error('上传头像图片只能是 JPG 格式!');
+    uploadImg (fileObj) {
+      this.loading = true
+      let fileStatus = this.file_info_check(fileObj.file)
+      if (fileStatus === 'success') {
+        let formData = new FormData()
+        formData.append('file', fileObj.file)
+        this.$axios.post('/upschead', formData, {
+          headers: {
+            'Content-type': 'multipart/form-data'
+          }
+        }).then(res => {
+          // this.registerForm.imageUrl = res
+          this.unitForm.unitImg = res.data.path
+          this.loading = false
+        })
+      } else {
+        this.$message({
+          message: fileStatus,
+          type: 'error'
+        })
       }
-      if (!isLt2M) {
-        this.$message.error('上传头像图片大小不能超过 2MB!');
-      }
-      return isJPG && isLt2M;
     },
   }
 }

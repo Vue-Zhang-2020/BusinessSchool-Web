@@ -10,7 +10,8 @@ import {
 // 创建axios实例
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8'
 const service = axios.create({
-  baseURL: process.env.VUE_APP_BASE_API, // api的base_url
+  baseURL: '/', // api的base_url
+  // baseURL: process.env.VUE_APP_BASE_API, // api的base_url
   timeout: 15000 // 请求超时时间
 })
 

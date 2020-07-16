@@ -8,7 +8,7 @@
       <el-dropdown>
         <span class="el-dropdown-link rows">
           <img src="../../assets/page/mine.png" width="24" height="24" alt="">
-          <span class="right_title">学校管理员</span>
+          <span class="right_title">{{ role == '1' ? '学校管理员' : '管理员' }}</span>
           <i class="el-icon-arrow-down el-icon--right"></i>
         </span>
         <el-dropdown-menu slot="dropdown">
@@ -37,6 +37,14 @@ export default {
       'sidebar',
       'avatar'
     ])
+  },
+  data () {
+    return {
+      role: ''
+    }
+  },
+  created() {
+    this.role = sessionStorage.getItem('roles')
   },
   methods: {
     toggleSideBar() {

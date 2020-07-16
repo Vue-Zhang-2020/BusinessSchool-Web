@@ -1,6 +1,6 @@
 <template>
   <div class="business-content">
-    <div v-if="insertObj" class="business-obj-model-page">
+    <div v-show="insertObj" class="business-obj-model-page">
       <el-scrollbar style="height: 100%">
         <div>
           <span class="top-title">添加对象</span>
@@ -15,10 +15,12 @@
             </el-col>
             <el-col class="table-box" :span="19">
               <el-table
+                :row-key="(row) => { row.id }"
                 @selection-change="handleSelectionStudent"
                 :data="studentInfoJsonData"
                 style="width: 100%;">
                 <el-table-column
+                  :reserve-selection="true"
                   type="selection">
                 </el-table-column>
                 <el-table-column
@@ -37,10 +39,11 @@
                   width="140">
                 </el-table-column>
                 <el-table-column
+                  prop="age"
                   label="出生年月"
                   width="110">
                   <template slot-scope="scope">
-                    <span>{{scope.row.age.substring(2, scope.row.age.indexOf('月') + 1)}}</span>
+                    <span>{{scope.row.age.substring(2, scope.row.age.indexOf('月') > -1 ? scope.row.age.indexOf('月') + 1 : scope.row.age)}}</span>
                   </template>
                 </el-table-column>
                 <el-table-column
@@ -70,7 +73,7 @@
     </div>
     <div v-if="!insertObj" class="business-model-page">
       <el-scrollbar style="height:100%">
-        <span class="top-title">制定教学计划</span>
+        <span class="top-title">{{modify === true ? '修改教学计划' : '制定教学计划'}}</span>
         <div class="business-model-box">
           <span>培训信息</span>
         </div>
@@ -80,7 +83,7 @@
               <el-tag
                 v-for="(tag, index) in this.teachingPlanForm.attendFirm"
                 :key="index"
-                closable
+                :closable="true"
                 class="button-new-tag"
                 size="small"
                 :type="index == 0 ? '' :
@@ -90,8 +93,13 @@
                 index == 4 ? 'info' :
                 index == 5 ? '' :
                 index == 6 ? 'success' : 'warning'"
-                @close="handleClose(tag.scname)">
-                {{tag.scname}}
+                @close="handleClose(tag)">
+                <span v-if="!modify">
+                  {{tag.comname}}
+                </span>
+                <span v-if="modify">
+                  {{tag.scname}}
+                </span>
               </el-tag>
               <el-button class="button-new-tag" size="mini" icon="el-icon-plus" @click="showFirmModal">选择上课企业</el-button>
             </div>
@@ -130,7 +138,7 @@
                 v-for="item in schoolSelectorJsonData"
                 :key="item.id"
                 :label="item.scname"
-                :value="item.id">
+                :value="item.scnameid">
               </el-option>
             </el-select>        
           </el-form-item>
@@ -151,21 +159,21 @@
           <el-form-item label="勋章获取条件：" prop="teachingPlanComplete" :label-width="formLabelWidth">
             <div>
               <span class="title-desc">课程完成率</span>  
-                <el-input v-model="teachingPlanForm.teachingPlanComplete" style="width: 10%; margin: 0 8px;" placeholder="请输入" autocomplete="off"></el-input>
-              <span class="title-desc title-right">以上</span>
+                <el-input-number :min="1" :max="99" :controls="false" v-model="teachingPlanForm.teachingPlanComplete" style="width: 10%; margin: 0 8px;" placeholder="请输入" autocomplete="off"></el-input-number>
+              <span class="title-desc title-right">%以上</span>
             </div>
           </el-form-item>
           <el-form-item label="" prop="teachingPlanIntegral" :label-width="formLabelWidth">
             <div class="title-box">
               <span class="title-desc">获取积分</span>
-                <el-input v-model="teachingPlanForm.teachingPlanIntegral" style="width: 10%; margin: 0 8px;" placeholder="请输入" autocomplete="off"></el-input>
+                <el-input-number :min="1" :max="9999" :controls="false" v-model="teachingPlanForm.teachingPlanIntegral" style="width: 10%; margin: 0 8px;" placeholder="请输入" autocomplete="off"></el-input-number>
               <span class="title-desc title-right">以上</span>
             </div>
           </el-form-item>
           <el-form-item label="" prop="teachingPlanGrade" :label-width="formLabelWidth">
             <div class="title-box">
               <span class="title-desc">考试成绩</span>
-                <el-input v-model="teachingPlanForm.teachingPlanGrade" style="width: 10%; margin: 0 8px;" placeholder="请输入" autocomplete="off"></el-input>
+                <el-input-number :step="0.1" :precision="1" :min="1" :max="100" :controls="false" v-model="teachingPlanForm.teachingPlanGrade" style="width: 10%; margin: 0 8px;" placeholder="请输入" autocomplete="off"></el-input-number>
               <span class="title-desc title-right">以上</span>
             </div>
           </el-form-item>
@@ -176,7 +184,7 @@
       <div class="business-control">
         <el-button class="blue-btn-back" @click="toBack">  返回  </el-button>
         <el-button class="blue-btn-two" style="margin-bottom: 0;">  预览  </el-button>
-        <el-button class="blue-btn" style="margin-bottom: 0;" @click="submitTeachingPlan('teachingForm')">  发布  </el-button>
+        <el-button class="blue-btn" style="margin-bottom: 0;" @click="submitTeachingPlan('teachingForm')">  {{modify === true ? '修改' : '发布'}}  </el-button>
       </div>
     </div>
     <!-- 上课企业 -->
@@ -184,20 +192,21 @@
       <el-row>
         <el-col class="row" :span="12">
           <el-input v-model="skFirmSearch" style="width: 70%" placeholder="请输入要搜索的内容"></el-input>
-          <el-button class="search-btn">搜索</el-button>
+          <el-button class="search-btn" @click="searchFirm">搜索</el-button>
         </el-col>
         <el-col style="text-align: right;" :span="12">
           <span>还没有你想要的课程？先去 <span style="color: red">上传企业</span> 吧！</span>
         </el-col>
       </el-row>
-      <el-table :data="firmJsonData" @selection-change="handleSelectionFirm" tooltip-effect="dark" height="260">
-        <el-table-column 
+      <el-table :data="firmJsonData" :row-key="(row) => {return row.id}" ref="firmTable" @selection-change="handleSelectionFirm" height="260">
+        <el-table-column
           type="index" label="序号" width="200"></el-table-column>
         <el-table-column
           type="selection"
+          :reserve-selection="true"
           width="200">
         </el-table-column>
-        <el-table-column property="scname" label="企业"></el-table-column>
+        <el-table-column property="comname" label="企业"></el-table-column>
       </el-table>
       <span slot="footer" class="dialog-footer">
         <el-button @click="skFirmDialog = false">取 消</el-button>
@@ -206,35 +215,38 @@
     </el-dialog>
 
     <!-- 添加课程 -->
-    <el-dialog title="添加课程" width="60%" :visible.sync="courseDialog">
+    <el-dialog title="添加课程" width="70%" :visible.sync="courseDialog">
       <el-row>
         <el-col class="row" :span="12">
           <el-input v-model="courseSearch" style="width: 70%" placeholder="请输入要搜索的内容"></el-input>
-          <el-button class="search-btn">搜索</el-button>
+          <el-button class="search-btn" @click="searchCourse">搜索</el-button>
         </el-col>
         <el-col style="text-align: right;" :span="12">
-          <span>还没有你想要的课程？先去 <span style="color: red">上传课程</span> 吧！</span>
+          <span>还没有你想要的课程？先去 <span style="color: red">
+            <router-link :to="{path:'/teaching/course/center', query:{ type: 1 }}" class="nav-link">上传课程</router-link>
+          </span> 吧！</span>
         </el-col>
       </el-row>
-      <el-table :data="courseJsonData" @selection-change="handleSelectionCourse" tooltip-effect="dark" height="260">
+      <el-table :data="courseJsonData" :row-key="(row) => {return row.id}" @selection-change="handleSelectionCourse" height="260">
         <el-table-column
+        :reserve-selection="true"
           type="selection">
         </el-table-column>
-        <el-table-column property="typename" width="160" label="课程分类"></el-table-column>
-        <el-table-column property="coursename" width="160" label="课程名称"></el-table-column>
-        <!-- <el-table-column property="date" label="选择讲师"></el-table-column>
-        <el-table-column property="date" label="选择课程时间"></el-table-column> -->
-        <el-table-column property="ctime" label="课程时间">
+        <el-table-column property="typename" width="140" label="课程分类"></el-table-column>
+        <el-table-column property="coursename" width="140" label="课程名称"></el-table-column>
+        <el-table-column property="persons" width="130" label="选择讲师"></el-table-column>
+        <el-table-column property="ctime" label="选择课程时间">
           <template slot-scope="scope">
             <el-date-picker
               v-model="scope.row.ctime"
               :clearable="false"
+              size="mini"
               type="datetime"
               placeholder="选择日期时间">
             </el-date-picker> 
           </template>
         </el-table-column>
-        <!-- <el-table-column property="address" label="地点"></el-table-column> -->
+        <el-table-column property="local" label="地点" width="90"></el-table-column>
         <el-table-column property="points" align="center" label="完成课程得到多少积分"></el-table-column>
       </el-table>
       <span slot="footer" class="dialog-footer">
@@ -247,22 +259,25 @@
     <el-dialog title="添加考试" width="60%" :visible.sync="examDialog">
       <el-row>
         <el-col class="row" :span="12">
-          <el-input v-model="courseSearch" placeholder="请输入要搜索的内容"></el-input>
-          <el-button class="search-btn">搜索</el-button>
+          <el-input v-model="examSearch" placeholder="请输入要搜索的内容"></el-input>
+          <el-button class="search-btn" @click="searchExam">搜索</el-button>
         </el-col>
         <el-col style="text-align: right;" :span="12">
-          <span>还没有你想要的考试？先去 <span style="color: red">上传考试</span> 吧！</span>
+          <span>还没有你想要的考试？先去 <span style="color: red">
+            <router-link :to="{path:'/teaching/exam/center', query:{ type: 1 }}" class="nav-link">上传考试</router-link>
+          </span> 吧！</span>
         </el-col>
       </el-row>
-      <el-table :data="examJsonData" @selection-change="handleSelectionExam" tooltip-effect="dark" height="260">
+      <el-table :data="examJsonData" :row-key="(row) => { return row.id }" @selection-change="handleSelectionExam" tooltip-effect="dark" height="260">
         <el-table-column
+        :reserve-selection="true"
           type="selection">
         </el-table-column>
         <el-table-column property="testname" label="考试名称"></el-table-column>
         <!-- <el-table-column property="date" label="添加监考人员"></el-table-column> -->
         <!-- <el-table-column property="date" label="添加考试时间"></el-table-column> -->
         <el-table-column property="testtime" label="考试时间"></el-table-column>
-        <!-- <el-table-column property="date" label="地点"></el-table-column> -->
+        <el-table-column property="date" label="地点"></el-table-column>
       </el-table>
       <span slot="footer" class="dialog-footer">
         <el-button @click="examDialog = false">取 消</el-button>
@@ -275,14 +290,15 @@
       <el-row>
         <el-col class="row" :span="12">
           <el-input v-model="medalSearch" placeholder="请输入要搜索的内容"></el-input>
-          <el-button class="search-btn">搜索</el-button>
+          <el-button class="search-btn" @click="searchMedal">搜索</el-button>
         </el-col>
         <el-col style="text-align: right;" :span="12">
           <span>还没有你想要的勋章？先去 <span style="color: red">上传勋章</span> 吧！</span>
         </el-col>
       </el-row>
-      <el-table :data="medalJsonData" @selection-change="handleSelectionMedal" tooltip-effect="dark" height="260">
+      <el-table :data="medalJsonData" :row-key="(row) => { return row.id }" @selection-change="handleSelectionMedal" tooltip-effect="dark" height="260">
         <el-table-column
+        :reserve-selection="true"
           type="selection">
         </el-table-column>
         <el-table-column property="name" label="勋章名称"></el-table-column>
@@ -306,6 +322,7 @@ export default {
   data () {
     return {
       schoolId: 0,
+      modify: false,
       skFirmDialog: false, // 上课企业 Dialog
       skFirmSearch: '', // 上课企业 搜索内容
       courseDialog: false, // 添加课程 Dialog
@@ -319,6 +336,7 @@ export default {
       courseJsonData: [], // 课程
       examJsonData: [], // 考试
       studentJsonData: [],
+      integralNumber: '',
       clickMajor: '',
       clickClasses: '',
       studentInfoJsonData: [],
@@ -335,9 +353,12 @@ export default {
       medalCheck: [],
       stduentCheck: [],
       teachingPlanForm: {
+        planId: '',
         attendFirm: [], // 上课企业
         teachingPlan: '',  // 请输入教学计划主题
         teachingPlanCourse: [],  // 教学计划内容 - 课程
+        teachingPlanCourseTeacher: [], // 老师
+        teachingPlanCourseTime: [], // 上课时间
         teachingPlanExam: [],  // 教学计划内容 - 考试
         teachingPlanInfo: '', // 教学计划说明
         imageUrl: '', // 教学计划封面
@@ -368,10 +389,34 @@ export default {
     }
   },
   created() {
+    var objModi = this.$route.query.obj
+    if (objModi !== undefined && objModi !== null) {
+      this.teachingPlanForm = {
+        planId: objModi.id,
+        attendFirm: objModi.scinfo, // 上课企业
+        teachingPlan: objModi.major,  // 请输入教学计划主题
+        teachingPlanCourse: [],  // 教学计划内容 - 课程
+        teachingPlanCourseTeacher: objModi.courseinfo, // 老师
+        teachingPlanCourseTime: [], // 上课时间
+        teachingPlanExam: [],  // 教学计划内容 - 考试
+        teachingPlanInfo: objModi.brief, // 教学计划说明
+        imageUrl: objModi.header, // 教学计划封面
+        teachingPlanSchool: parseInt(objModi.scname.id), // 学校
+        teachingPlanObj: [], // 上课对象
+        teachingPlanMedal: [], // 认证勋章
+        teachingPlanComplete: objModi.class, // 完成度
+        teachingPlanIntegral: objModi.points, // 积分
+        teachingPlanGrade: objModi.res // 成绩
+      }
+      this.modify = true
+    }
     this.schoolId = this.$store.getters.schoolId
     this.requestSchoolSelectorJsonData()
   },
   methods: {
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+    },
     // 获取学校列表
     requestSchoolSelectorJsonData() {
       this.$axios.post(this.$global.sApi + '/addscuser', JSON.stringify({
@@ -387,10 +432,29 @@ export default {
       this.requestFirmJsonData()
       this.skFirmDialog = true
     },
+    // 搜索企业列表
+    searchFirm() {
+      if (this.skFirmSearch == '') {
+        this.requestFirmJsonData()
+      } else {
+        this.searchFirmJsonData()
+      }
+    },
+    // 搜索企业列表
+    searchFirmJsonData() {
+      this.$axios.post(this.$global.sApi + '/addcom', JSON.stringify({
+        'type': 4,
+        'work': this.skFirmSearch
+      })).then(res => {
+        this.firmJsonData = res.data.data.data
+      })
+    },
     // 企业列表
     requestFirmJsonData() {
       this.$axios.post(this.$global.sApi + '/findmsg', JSON.stringify({
-        'type': 1
+        'type': 1,
+        'current_page': 1,
+        'perpage': 9999
       })).then(res => {
         this.firmJsonData = res.data.data[0]
       })
@@ -399,6 +463,23 @@ export default {
     showCourseModal() {
       this.requestCourseJsonData()
       this.courseDialog = true
+    },
+    // 搜索课程列表
+    searchCourse() {
+      if (this.courseSearch == '') {
+        this.requestCourseJsonData()
+      } else {
+        this.searchCourseJsonData()
+      }
+    },
+    // 搜索课程列表
+    searchCourseJsonData() {
+      this.$axios.post(this.$global.sApi + '/course', JSON.stringify({
+        'type': 5,
+        'coursename': this.courseSearch
+      })).then(res => {
+        this.courseJsonData = res.data.data[0]
+      })
     },
     // 获取课程列表
     requestCourseJsonData() {
@@ -415,6 +496,23 @@ export default {
       this.requestExamJsonData()
       this.examDialog = true
     },
+    // 搜索考试列表
+    searchExam() {
+      if (this.examSearch == '') {
+        this.requestExamJsonData()
+      } else {
+        this.searchExamJsonData()
+      }
+    },
+    // 搜索考试列表
+    searchExamJsonData() {
+      this.$axios.post(this.$global.sApi + '/addtest', JSON.stringify({
+        'type': 5,
+        'testname': this.examSearch
+      })).then(res => {
+        this.examJsonData = res.data.data[0]
+      })
+    },
     // 获取考试列表
     requestExamJsonData() {
       this.$axios.post(this.$global.sApi + '/addtest', JSON.stringify({
@@ -427,52 +525,63 @@ export default {
     },
     // 显示添加对象
     showObjModal() {
-      this.requestSchoolJsonData()
-      this.requestStudentInfoJsonData()
-      this.insertObj = true
-    },
-    // 筛选学生资料
-    requestFilterClickJsonData() {
-      this.$axios.post(this.$global.sApi + '/findstu', JSON.stringify({
-        'proinfoid': parseInt(this.clickMajor)|'',
-        'classinfoid': parseInt(this.clickClasses)|''
-      })).then(res => {
-        // this.total = res.data.data.total
-        const json = res.data.data[0]
-        this.studentInfoJsonData = json
-      })
+      if (this.teachingPlanForm.teachingPlanSchool == '') {
+        this.$message({
+          message: '请先选择学校',
+          type: 'warning'
+        })
+      } else {
+        this.requestSchoolJsonData()
+        this.requestStudentInfoJsonData()
+        this.insertObj = true
+      }
     },
     // 获取学生资料列表
     requestStudentInfoJsonData() {
-      this.$axios.post(this.$global.sApi + '/liststu', JSON.stringify({
-        'classinfoid': 2,
-        'majorId': '',
-        'classesId': '',
-        'current_page': this.currentPage,
-        'perpage': this.pagesize,
+      this.$axios.post(this.$global.sApi + '/findstu', JSON.stringify({
+        'scinfoid': this.teachingPlanForm.teachingPlanSchool,
+        'current_page': 1,
+        'perpage': 9999,
+        'phone': '',
+        'username': '',
+        'proinfoid': parseInt(this.clickMajor),
+        'lclassinfoid': parseInt(this.clickClasses)
       })).then(res => {
-        this.total = res.data.data.total
+        // this.total = res.data.data.total
         const json = res.data.data.data
-        if (json.length > 0) {
-          this.studentInfoJsonData = json
-        }
+        this.studentInfoJsonData = json
       })
     },
     // 获取学校数据
     requestSchoolJsonData() {
       this.$axios.post(this.$global.sApi + '/navigation', JSON.stringify({
-        'scinfoid': this.schoolId
+        'scinfoid': this.teachingPlanForm.teachingPlanSchool,
       })).then(res => {
-        const json = res.data.data[0]
-        if (json.length > 0) {
-          this.studentJsonData = json
-        }
+        const json = res.data.data
+        this.studentJsonData = json
       })
     },
     // 显示添加勋章
     showMedalModal() {
       this.requestMedalJsonData()
       this.medalDialog = true
+    },
+    // 搜索勋章列表
+    searchMedal() {
+      if (this.medalSearch == '') {
+        this.requestMedalJsonData()
+      } else {
+        this.searchMedalJsonData()
+      }
+    },
+    // 搜索勋章列表
+    searchMedalJsonData() {
+      this.$axios.post(this.$global.sApi + '/addexz', JSON.stringify({
+        'type': 5,
+        'name': this.medalSearch
+      })).then(res => {
+        this.medalJsonData = res.data.data[0]
+      })
     },
     // 勋章列表
     requestMedalJsonData() {
@@ -485,7 +594,12 @@ export default {
       })
     },
     handleClose(tag) {
-      this.dynamicTags.splice(this.dynamicTags.indexOf(tag), 1);
+      if (this.firmCheck.indexOf(tag) > -1) {
+        this.$delete(this.firmCheck, this.firmCheck.indexOf(tag))
+      }
+      if (this.teachingPlanForm.attendFirm.indexOf(tag) > -1) {
+        this.$delete(this.teachingPlanForm.attendFirm, this.teachingPlanForm.attendFirm.indexOf(tag))
+      }
     },
     // 前端校验文件上传是否符合条件
     file_info_check (file) {
@@ -534,10 +648,6 @@ export default {
           }
         }).then(res => {
           // this.registerForm.imageUrl = res
-          this.$message({
-            message: '提交成功',
-            type: 'success'
-          })
           this.teachingPlanForm.imageUrl = res.data.path
           this.loading = false
         })
@@ -553,7 +663,6 @@ export default {
     },
     checkFirm() {
       this.teachingPlanForm.attendFirm = this.firmCheck
-      console.log(this.teachingPlanForm.attendFirm)
       this.skFirmDialog = false
     },
     handleSelectionCourse(val) {
@@ -586,12 +695,17 @@ export default {
     },
     // 院校专业菜单
     handleNodeClick(data) {
-      if (typeof data.classinfo === "object") {
+      console.log(data.type)
+      if (data.type !== 'undefined' && data.type === 1) {
+        this.teachingPlanForm.teachingPlanSchool = data.id
+        this.clickMajor = 0
+        this.clickClasses = 0
+      } else if (typeof data.classinfo === "object") {
         this.clickMajor = data.id
       } else {
         this.clickClasses = data.id
-        this.requestFilterClickJsonData()
       }
+      this.requestStudentInfoJsonData()
     },
     // 树形菜单
     renderContent(h,{node,data,store}) {
@@ -607,7 +721,12 @@ export default {
       this.$refs[formName].validate((valid) => {
         if (valid) {
           if (this.courseCheck.length > 0) {
-            this.insertTeachingPlan(formName)
+                  debugger
+            if (this.modify) {
+              this.modifyTeachingPlan(formName)
+            } else {
+              this.insertTeachingPlan(formName)
+            }
           } else {
             this.$message({
               message: '请选择教学计划内容',
@@ -629,6 +748,14 @@ export default {
       this.teachingPlanForm.teachingPlanCourse.forEach(element => {
         courseList += element.id + ','
       });
+      var teacherList = ''
+      this.teachingPlanForm.teachingPlanCourse.forEach(element => {
+        teacherList += element.persons + ','
+      });
+      var timeList = ''
+      this.teachingPlanForm.teachingPlanCourse.forEach(element => {
+        timeList += element.ctime + ','
+      });
       var examList = ''
       this.teachingPlanForm.teachingPlanExam.forEach(element => {
         examList += element.id + ','
@@ -637,21 +764,11 @@ export default {
       this.teachingPlanForm.teachingPlanMedal.forEach(element => {
         medalList += element.id + ','
       });
+      var studentList = ''
+      this.teachingPlanForm.teachingPlanObj.forEach(element => {
+        studentList += element.id + ','
+      });
       this.$axios.post(this.$global.sApi + '/addevent', JSON.stringify({
-        // scinfoid::企业列表, 以逗号分隔                        teachingPlanForm: {
-        // major:主题                                attendFirm: [], // 上课企业
-        // course:课程列表ID 以逗号分隔               teachingPlan: '',  // 请输入教学计划主题
-        // test:考试列表id 以逗号分隔                 teachingPlanExam: [],  // 教学计划内容
-        // brief:简介 (空就以暂无代替)                teachingPlanInfo: '', // 教学计划说明
-        // header:封面图片 (空就以暂无代替)           imageUrl: '', // 教学计划封面
-        // schoolid:学校ID                           teachingPlanSchool: '', // 学校
-        // medal:认证勋章id 以逗号分隔                teachingPlanObj: '', // 上课对象
-        // points 积分完成率                         teachingPlanMedal: [], // 认证勋章
-        // res 成绩完成率                            teachingPlanComplete: '', // 完成度
-        // class 课程完成率                          teachingPlanIntegral: '', // 积分
-        // classid:班级id                           teachingPlanGrade: '' // 成绩
-        // classobj: 学生id 以逗号分隔               teachingPlanCourse: [],  // 教学计划内容
-
         'scinfoid': firmList.substring(0, firmList.length - 1),
         'major': this.teachingPlanForm.teachingPlan,
         'course': courseList.substring(0, courseList.length - 1),
@@ -664,7 +781,9 @@ export default {
         'res': this.teachingPlanForm.teachingPlanGrade,
         'class': this.teachingPlanForm.teachingPlanComplete,
         'classid': parseInt(this.clickClasses),
-        'classobj': this.teachingPlanForm.teachingPlan
+        'classobj': studentList.substring(0, studentList.length - 1),
+        'persons': teacherList.substring(0, teacherList.length - 1),
+        'classtime': timeList.substring(0, timeList.length - 1)
       })).then(res => {
         this.$message({
           message: '制定成功',
@@ -679,6 +798,71 @@ export default {
         this.stduentCheck = []
         this.clickClasses = ''
         this.clickMajor = ''
+      })
+    },
+    // 修改教学计划
+    modifyTeachingPlan(formName) {
+      var firmList = ''
+      this.teachingPlanForm.attendFirm.forEach(element => {
+        firmList += element.id + ','
+      });
+      console.log(firmList.substring(0, firmList.length - 1))
+      var courseList = ''
+      this.teachingPlanForm.teachingPlanCourse.forEach(element => {
+        courseList += element.id + ','
+      });
+      var teacherList = ''
+      this.teachingPlanForm.teachingPlanCourse.forEach(element => {
+        teacherList += element.persons + ','
+      });
+      var timeList = ''
+      this.teachingPlanForm.teachingPlanCourse.forEach(element => {
+        timeList += element.ctime + ','
+      });
+      var examList = ''
+      this.teachingPlanForm.teachingPlanExam.forEach(element => {
+        examList += element.id + ','
+      });
+      var medalList = ''
+      this.teachingPlanForm.teachingPlanMedal.forEach(element => {
+        medalList += element.id + ','
+      });
+      var studentList = ''
+      this.teachingPlanForm.teachingPlanObj.forEach(element => {
+        studentList += element.id + ','
+      });
+      this.$axios.post(this.$global.sApi + '/eventlist', JSON.stringify({
+        'scinfoid': firmList.substring(0, firmList.length - 1),
+        'major': this.teachingPlanForm.teachingPlan,
+        'course': courseList.substring(0, courseList.length - 1),
+        'test': examList.substring(0, examList.length - 1),
+        'brief': this.teachingPlanForm.teachingPlanInfo == '' ? '暂无' : this.teachingPlanForm.teachingPlanInfo,
+        'header': this.teachingPlanForm.imageUrl,
+        'schoolid': parseInt(this.teachingPlanForm.teachingPlanSchool),
+        'medal': medalList.substring(0, medalList.length - 1),
+        'points': this.teachingPlanForm.teachingPlanIntegral,
+        'res': this.teachingPlanForm.teachingPlanGrade,
+        'class': this.teachingPlanForm.teachingPlanComplete,
+        'classid': parseInt(this.clickClasses),
+        'classobj': studentList.substring(0, studentList.length - 1),
+        'persons': teacherList.substring(0, teacherList.length - 1),
+        'classtime': timeList.substring(0, timeList.length - 1),
+        'type': 3
+      })).then(res => {
+        this.$message({
+          message: '修改成功',
+          type: 'success'
+        })
+        this.$refs[formName].resetFields()
+        this.teachingPlanForm = {}
+        this.firmCheck = []
+        this.courseCheck = []
+        this.examCheck = []
+        this.medalCheck = []
+        this.stduentCheck = []
+        this.clickClasses = ''
+        this.clickMajor = ''
+        this.toBack()
       })
     },
     toBack() {

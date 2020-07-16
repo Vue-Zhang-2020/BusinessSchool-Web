@@ -25,7 +25,7 @@ module.exports = {
    * Detail: https://cli.vuejs.org/config/#publicpath
    */
   publicPath: '/',
-  outputDir: 'dist',
+  outputDir: 'business',
   assetsDir: 'static',
   lintOnSave: process.env.NODE_ENV === 'development',
   productionSourceMap: false,
@@ -39,11 +39,11 @@ module.exports = {
     proxy: {
       // detail: https://cli.vuejs.org/config/#devserver-proxy
       '/': {
-        target: `http://www.yanerly.cn`,
+        target: 'http://mrcba.bbddp.com',
         // target: `http://192.168.0.115`,
         changeOrigin: true,
         pathRewrite: {
-          '^/': '/'
+          '^/': ''
         }
       }
     }
@@ -56,6 +56,18 @@ module.exports = {
       alias: {
         '@': resolve('src')
       }
+    },
+    performance: {
+      hints: 'warning',
+      maxEntrypointSize: 50000000,
+      maxAssetSize: 30000000,
+      assetFilter: function(assetFilename) {
+        return assetFilename.endsWith('.js')
+      }
+    },
+    // eslint-disable-next-line no-dupe-keys
+    performance: {
+      hints: false
     }
   },
   chainWebpack(config) {

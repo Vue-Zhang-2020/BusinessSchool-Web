@@ -75,8 +75,11 @@ const user = {
       return new Promise((resolve, reject) => {
         login(username, userInfo.password).then(response => {
           const data = response.data
+          console.log(parseInt(data[0].scnameid))
           setToken(data[0].api_token)
           commit('SET_TOKEN', data[0].api_token)
+          commit('SET_SCHOOL_ID', parseInt(data[0].scnameid))
+          sessionStorage.setItem('schoolId', parseInt(data[0].scnameid))
           resolve(response)
         }).catch(error => {
           reject('错误' + error)
@@ -160,14 +163,6 @@ const user = {
                     "component": "school_port/student/student_info_manager",
                     "meta": {
                       "title": "学生资料管理"
-                    }
-                  },
-                  {
-                    "path": "grade",
-                    "name": "grade",
-                    "component": "school_port/student/student_grade_manager",
-                    "meta": {
-                      "title": "学生成绩列表"
                     }
                   }
                 ]
@@ -485,7 +480,7 @@ const user = {
           commit('SET_NAME', 'data.name')
           commit('SET_ROLES', sessionStorage.getItem('roles'))
           commit('SET_AVATAR', 'data.avatar')
-          commit('SET_SCHOOL_ID', 1)
+          // commit('SET_SCHOOL_ID', 1)
           // commit('SET_ROUTERS', routerFormat(data.routers))
           console.log(sessionStorage.getItem('roles'))
           commit('SET_ROUTERS', routerFormat(

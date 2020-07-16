@@ -64,16 +64,16 @@
     <el-dialog :title="insertOrModifyModel === 0 ? '添加专业' : '编辑专业'" :visible.sync="insertDialog">
       <el-form :model="majorForm" :rules="rules" ref="majorForm">
         <el-form-item label="专业名称：" prop="majorName" :label-width="formLabelWidth">
-          <el-input v-model="majorForm.majorName" style="width: 80%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input v-model="majorForm.majorName" maxlength="40" style="width: 80%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="专业人数：" prop="majorPerson" :label-width="formLabelWidth">
-          <el-input v-model="majorForm.majorPerson" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input v-model="majorForm.majorPerson" onKeypress="return (/[\d]/.test(String.fromCharCode(event.keyCode)))" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input>
           <span>  人</span>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="insertDialog = false">取 消</el-button>
-        <el-button type="primary" @click="submitForm('majorForm')">确定添加</el-button>
+        <el-button type="primary" @click="submitForm('majorForm')">{{insertOrModifyModel === 0 ? '确认添加' : '确认修改'}}</el-button>
       </div>
     </el-dialog>
   </div>
@@ -87,7 +87,7 @@ export default {
       schoolId: 0,
       majorJsonData: [], // 专业列表数据
       majorId: '', // 专业Id
-      total: 4,
+      total: 5,
       currentPage: 1,
       pagesize: 5,
       insertOrModifyModel: 0,  // 0 添加 1 编辑
@@ -113,8 +113,21 @@ export default {
     this.schoolId = this.$store.getters.schoolId
     this.requestMajorJsonData()
   },
+  watch: {
+    insertDialog(val) {
+      if (!val) {
+        this.$refs.majorForm.resetFields();
+        this.majorForm = {
+          majorId: '',
+          majorName: '',
+          majorPerson: ''
+        }
+      }
+    }
+  },
   methods: {
     handleSizeChange(val) {
+      this.pagesize = val
       this.requestMajorJsonData()
     },
     handleCurrentChange(val) {
@@ -157,9 +170,8 @@ export default {
         'scinfoid': this.schoolId
       })).then(res => {
         const json = res.data.data.data
-        if (json.length > 0) {
-          this.majorJsonData = json
-        }
+        this.total = res.data.data.total
+        this.majorJsonData = json
       })
     },
     // 添加专业

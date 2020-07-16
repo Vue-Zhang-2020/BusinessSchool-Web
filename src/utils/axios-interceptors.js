@@ -1,22 +1,22 @@
 import axiosService from 'axios'
 import { Message } from 'element-ui'
+import store from '@/store'
+import { getToken } from '@/utils/auth'
 
 /* 创建axios实例 */
 const axios = axiosService.create({
-  baseURL: process.env.API_HOST, /* 在config/dev.evn.js、prod.evn.js里面进行配置 */
+  baseURL: '/', /* 在config/dev.evn.js、prod.evn.js里面进行配置 */
   timeout: 60000 /* 设置超时时间为5s */
 });
 
-import store from '@/store'
-import { getToken } from '@/utils/auth'
 
 /* request拦截器 ==> 对请求参数进行处理 */
 axios.interceptors.request.use(config => {
   console.log(`请求携带Token：${store.getters.token}`)
   if (store.getters.token) {
     config.headers['Authorization'] = getToken() // 让每个请求携带自定义token 请根据实际情况自行修改
+    config.headers.post['Content-Type'] = 'application/json;charset=UTF-8'
   }
-  config.headers.post['Content-Type'] = 'application/json;charset=UTF-8'
   return config
 }, error => {
   Message.error('请求失败')
@@ -27,10 +27,11 @@ axios.interceptors.request.use(config => {
 axios.interceptors.response.use(
   response => {
     // console.log(response.data.code)
-    if (response.status == '200') {
+    if (response.data.status == '200') {
       return response
     } else {
-      Message.error('请求失败')
+      Message.error(response.data.msg)
+      return Promise.reject(response.data.msg)
     }
   }, error => {
     /* 判断error的status代码，并将对应的信息告知用户 */

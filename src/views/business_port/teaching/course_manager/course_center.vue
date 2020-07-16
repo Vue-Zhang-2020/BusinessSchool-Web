@@ -126,7 +126,7 @@
                 <img src="../../../../assets/page/modify.png" alt="">
               </div>
               <div class="course_line"></div>
-              <div class="delete-box" @click="showDeleteModal(course.id)">
+              <div class="delete-box" @click="showDeleteModal(course)">
                 <img src="../../../../assets/page/delete.png" alt="">
               </div>
             </div>
@@ -164,7 +164,18 @@
       <span>此课程已加入到教学计划，不能删除</span>
       <span slot="footer" class="dialog-footer">
         <el-button @click="deleteDialog = false">取 消</el-button>
-        <el-button type="primary" @click="deleteDialog = false">确 认</el-button>
+        <el-button type="primary" @click="deleteCourse">确 认</el-button>
+      </span>
+    </el-dialog>
+    <!-- 删除提示 -->
+    <el-dialog
+      title="提示"
+      :visible.sync="affirmDeleteDialog"
+      width="40%">
+      <span>确定要删除此课程吗？</span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="affirmDeleteDialog = false">取 消</el-button>
+        <el-button type="primary" @click="affirmDeleteCourse">确 认</el-button>
       </span>
     </el-dialog>
     <!-- 关闭提示 -->
@@ -195,6 +206,7 @@ export default {
       insertOrModifyModal: false,
       deleteDialog: false,
       modifyDialog: false,
+      affirmDeleteDialog: false,
       loading: false,
       successDialog: false,
       modifyTitle: 0, // 0 添加 1 修改
@@ -202,6 +214,7 @@ export default {
       count: 3,
       courseJsonData: [],
       studentJsonData: [],
+      deleteCourseId: '',
       courseType: [],
       courseForm: {
         courseId: '',
@@ -251,10 +264,14 @@ export default {
     }
   },
   created() {
+    if (this.$route.query.type !== 'undefined' && this.$route.query.type === 1) {
+      this.insertOrModifyModal = true
+    }
     this.requestCourseJsonData()
   },
   methods: {
     handleSizeChange(val) {
+      this.pagesize = val
       this.requestCourseJsonData() 
     },
     handleCurrentChange(val) {
@@ -274,8 +291,26 @@ export default {
       this.insertOrModifyModal = false
     },
     // 显示删除Dialog
-    showDeleteModal() {
-      this.deleteDialog = true
+    showDeleteModal(obj) {
+      if (obj.status == '2') {
+        this.deleteDialog = true
+      } else {
+        this.deleteCourseId = parseInt(obj.id)
+        this.affirmDeleteDialog = true
+      }
+    },
+    affirmDeleteCourse() {
+      this.$axios.post(this.$global.sApi + '/course', JSON.stringify({
+        'type': 3,
+        'id': this.deleteCourseId
+      })).then(res => {
+        this.$message({
+          message: '删除成功',
+          type: 'success'
+        })
+        this.affirmDeleteDialog = false
+        this.requestCourseJsonData()
+      })
     },
     // 显示添加课程Dialog
     showInserModal(flag, obj) {
@@ -312,6 +347,18 @@ export default {
         }
       }
     },
+    // 删除课程
+    deleteCourse() {
+      this.$axios.post(this.$global.sApi + '/course', JSON.stringify({
+        'id': parseInt(this.deleteCourseId)
+      })).then(res => {
+        this.$message({
+          message: '删除成功',
+          type: 'success'
+        })
+        this.requestCourseJsonData()
+      })
+    }, 
     // 获取学校信息
     requestSchoolJsonData() {
       this.$axios.post(this.$global.sApi + '/addscuser', JSON.stringify({
@@ -405,10 +452,6 @@ export default {
           }
         }).then(res => {
           // this.registerForm.imageUrl = res
-          this.$message({
-            message: '提交成功',
-            type: 'success'
-          })
           this.courseForm.courseImg = res.data.path
           this.loading = false
         })
