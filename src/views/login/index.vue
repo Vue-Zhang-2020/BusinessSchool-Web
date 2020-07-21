@@ -147,13 +147,15 @@ export default {
           this.$store.dispatch('Login', this.loginForm).then(response => {
             sessionStorage.setItem('token', response.data[0].api_token)
             sessionStorage.setItem('roles', response.data[0].power)
+            sessionStorage.setItem('schName', response.data[0].scname)
             this.loading = false
             this.$router.push({ path: '/' })
-          }).catch(() => {
-            this.$message({
-              message: '服务器繁忙，登录失败',
-              type: 'error'
-            })
+          })
+          .catch(() => {
+            // this.$message({
+            //   message: '服务器繁忙，登录失败',
+            //   type: 'error'
+            // })
             this.loading = false
           })
         } else { 

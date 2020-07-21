@@ -62,7 +62,7 @@
     </el-pagination>
     <!-- 添加/编辑 勋章 -->
     <el-dialog :title="insertOrModifyModel === 0 ? '添加勋章' : '编辑勋章'" width="40%" :visible.sync="insertOrModifyDialog">
-      <el-form :model="medalForm" :role="medalRoles" ref="medalForm">
+      <el-form :model="medalForm" :rules="roles" ref="medalRefForm">
         <el-form-item label="勋章名称：" prop="medalName" :label-width="formLabelWidth">
           <el-input v-model="medalForm.medalName" style="width: 37%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
@@ -80,7 +80,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="insertOrModifyDialog = false">取 消</el-button>
-        <el-button type="primary" @click="submitForm('medalForm')">{{ insertOrModifyModel === 0 ? '确认添加' : '确认修改' }}</el-button>
+        <el-button type="primary" @click="submitForm('medalRefForm')">{{ insertOrModifyModel === 0 ? '确认添加' : '确认修改' }}</el-button>
       </div>
     </el-dialog>
     <!-- 删除提示 -->
@@ -112,15 +112,15 @@ export default {
       insertOrModifyDialog: false,
       deleteDialog: false,
       medalJsonData: [],
-      medalRoles: {
-        medalName: [
-          { required: true, message: '请输入勋章名称', trigger: 'blur' }
-        ]
-      },
       medalForm: {
         medalId: '',
         medalName: '',
         medalImg: ''
+      },
+      roles: {
+        medalName: [
+          { required: true, message: '请输入勋章名称', trigger: 'blur' }
+        ]
       },
       gridData: [{
           date: '2016-05-02',
@@ -139,6 +139,15 @@ export default {
           name: '王小虎',
           address: '上海市普陀区金沙江路 1518 弄'
         }],
+    }
+  },
+  watch: {
+    insertOrModifyDialog(val) {
+      if (!val) {
+        this.$nextTick(function () {
+          this.$refs['medalRefForm'].clearValidate();
+        })
+      }
     }
   },
   created() {

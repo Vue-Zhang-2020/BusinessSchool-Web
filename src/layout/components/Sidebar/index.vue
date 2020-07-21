@@ -2,12 +2,16 @@
   <div :class="[{'has-logo':showLogo}, 'box-model']">
     <div class="logo-box">
       <!-- 学校端 -->
-      <!-- <img src="../../../assets/logo.png" width="32" height="32" alt="">
-      <span class="pro-name">惠州中职院</span> -->
+      <div class="logo" v-if="role == 1">
+        <img :src="header === '' ? 'http://mrcba.bbddp.com/upload/logo2.png' : '../../../assets/logo.png'" width="32" height="32" alt="">
+        <span class="pro-name">{{ schoolName }}</span>
+      </div>
 
       <!-- 商管院平台 -->
-      <img src="../../../assets/page/business.png" width="32" height="32" alt="">
-      <span class="pro-name">商管院平台</span>
+      <div class="logo" v-if="role == 2">
+        <img src="../../../assets/page/business.png" width="32" height="32" alt="">
+        <span class="pro-name">商管院平台</span>
+      </div>
 
       <!-- 企业端 -->
       <!-- <img src="../../../assets/logo.png" width="32" height="32" alt="">
@@ -42,6 +46,16 @@ import variables from '@/styles/variables.scss'
 
 export default {
   components: { SidebarItem, Logo },
+  data () {
+    return {
+      role: '',
+      header: '',
+      schoolName: sessionStorage.getItem('schName')
+    }
+  },
+  created() {
+    this.role = sessionStorage.getItem('roles')
+  },
   computed: {
     ...mapGetters([
       'sidebar'
@@ -96,6 +110,12 @@ export default {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+  }
+
+  .logo-box .logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .logo-box .pro-name {

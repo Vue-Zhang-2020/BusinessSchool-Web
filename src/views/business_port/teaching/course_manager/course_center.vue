@@ -35,7 +35,7 @@
             <p class="teachingPlanDesc">建议图片长宽比为2 : 1，建议200*100，支持jpg、jpeg、png格式，图片大小不超过2M</p>
           </el-form-item>
           <el-form-item label="课程简介：" prop="courseDesc" :label-width="formLabelWidth">
-            <el-input type="textarea" v-model="courseForm.courseDesc" style="width: 60%; min-height: 160px;" :rows="8"></el-input>
+            <el-input type="textarea" maxlength="500" show-word-limit v-model="courseForm.courseDesc" style="width: 60%; min-height: 160px;" :rows="8"></el-input>
           </el-form-item>
           <div class="business-model-box">
             <span>其他设置</span>
@@ -81,7 +81,7 @@
             <p class="teachingPlanDesc">建议图片长宽比为2 : 1，建议200*100，支持jpg、jpeg、png格式，图片大小不超过2M</p>
           </el-form-item>
           <el-form-item label="课程简介：" prop="courseDesc" :label-width="formLabelWidth">
-            <el-input type="textarea" v-model="courseInsertForm.courseDesc" style="width: 60%; min-height: 160px;" :rows="8"></el-input>
+            <el-input type="textarea" maxlength="500" show-word-limit v-model="courseInsertForm.courseDesc" style="width: 60%; min-height: 160px;" :rows="8"></el-input>
           </el-form-item>
         </el-form>
         <el-button v-if="modifyTitle === 0" class="blue-btn-two" style="margin-bottom: 0;" @click="insertOrModifyModal = false">  返回  </el-button>
@@ -185,10 +185,10 @@
       width="40%">
       <span>保存成功！</span>
       <p style="color: rgba(0,0,0,0.45);font-size: 12px;">{{count}}s后跳转到课程中心页面</p> 
-      <span slot="footer" class="dialog-footer">
+      <!-- <span slot="footer" class="dialog-footer">
         <el-button @click="successDialog = false">取 消</el-button>
         <el-button type="primary" @click="toList">确 认</el-button>
-      </span>
+      </span> -->
     </el-dialog>
   </div>
 </template>
@@ -265,6 +265,7 @@ export default {
   },
   created() {
     if (this.$route.query.type !== 'undefined' && this.$route.query.type === 1) {
+      this.requestSchoolJsonData()
       this.insertOrModifyModal = true
     }
     this.requestCourseJsonData()
@@ -367,7 +368,6 @@ export default {
         'perpage': 9999
       })).then(res => {
         this.studentJsonData = res.data.data.data
-        console.log(this.studentJsonData)
       })
     },
     // 获取课程类型
@@ -467,17 +467,13 @@ export default {
       let fileStatus = this.file_info_check(fileObj.file)
       if (fileStatus === 'success') {
         let formData = new FormData()
-        formData.append('file', fileObj.file)
+        formData.append('file', fileObj.file) 
         this.$axios.post('/upschead', formData, {
           headers: {
             'Content-type': 'multipart/form-data'
           }
         }).then(res => {
           // this.registerForm.imageUrl = res
-          this.$message({
-            message: '提交成功',
-            type: 'success'
-          })
           this.courseInsertForm.courseImg = res.data.path
           this.loading = false
         })

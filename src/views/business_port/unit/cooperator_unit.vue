@@ -94,28 +94,28 @@
           <el-input v-model="unitForm.unitManager" style="width: 40%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="规模：" prop="unitScale" :label-width="formLabelWidth">
-          <el-input v-model="unitForm.unitScale" type="number" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input><span>   人</span>
+          <el-input-number :min="1" :max="999999" :controls="false" v-model="unitForm.unitScale" type="number" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input-number><span>   人</span>
         </el-form-item>
         <el-form-item label="企业介绍：" prop="unitMsg" :label-width="formLabelWidth">
           <el-input type="textarea" v-model="unitForm.unitMsg" style="width: 60%;"></el-input>
         </el-form-item> 
         <el-form-item label="初始账号：" prop="unitAccount" :label-width="formLabelWidth">
-          <el-input v-model="unitAccount" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
+          <el-input v-model="unitAccount" ref="unitAccount" minlength="8" maxlength="40" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="初始密码：" prop="unitPassword" :label-width="formLabelWidth">
-          <el-input v-model="unitPassword" style="width: 40%" placeholder="8-20位必须包含数字及字母" autocomplete="off"></el-input>
+          <el-input v-model="unitPassword" ref="unitPassword" minlength="8" maxlength="20" style="width: 40%" placeholder="8-20位必须包含数字及字母" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="insertDialog = false">取 消</el-button>
-        <el-button type="primary" @click="submitForm('classForm')">确定添加</el-button>
+        <el-button type="primary" @click.native.prevent="submitForm('classForm')">{{ insertOrModifyModel == 0 ? '确认添加' : '确认编辑' }}</el-button>
       </div>
     </el-dialog>
     <!-- 查看Dialog -->
     <el-dialog title="合作企业详情" class="dialog-modal" :visible.sync="lookDialog" style="margin-top: -60px;">
       <el-form :model="unitForm" :rules="rules" ref="classForm">
         <el-form-item label="企业头像：" :label-width="formLabelWidth">
-          <img width="104" height="104" :src="unitForm.header" alt="" style="padding: 8px;border: 1px solid rgba(0,0,0,0.15);border-radius: 2px;">     
+          <img width="104" height="104" :src="unitForm.unitImg" alt="" style="padding: 8px;border: 1px solid rgba(0,0,0,0.15);border-radius: 2px;">     
         </el-form-item>
         <el-form-item label="企业名称：" :label-width="formLabelWidth">
           <span class="unit-span">{{unitForm.unitName}}</span>
@@ -147,6 +147,22 @@
 export default {
   name: '',
   data () {
+    const validateUnitAccount = (rule, value, callback) => {
+      var reg = new RegExp(/[A-Za-z].*[0-9]|[0-9].*[A-Za-z]/);
+      if (value.length > 7 && value.length < 41 && reg.test(value)) {
+        callback();
+      } else {
+        callback(new Error("只支持数字和英文字母输入"));
+      }
+    };
+    const validateUnitPassword = (rule, value, callback) => {
+      var reg = new RegExp(/[A-Za-z].*[0-9]|[0-9].*[A-Za-z]/);
+      if (value.length > 7 && value.length < 21 && reg.test(value)) {
+        callback();
+      } else {
+        callback(new Error("8-20位必须包含数字及字母"));
+      }
+    };
     return {
       total: 0,
       currentPage: 1,
@@ -178,10 +194,10 @@ export default {
           { required: true, message: '请输入规模', trigger: 'blur' }
         ],
         unitAccount: [
-          { required: true, message: '请输入初始账号', trigger: 'blur' }
+          { required: true, trigger: 'blur', validator: validateUnitAccount }
         ],
         unitPassword: [
-          { required: true, message: '请输入初始密码', trigger: 'blur' }
+          { required: true, trigger: 'blur', validator: validateUnitPassword }
         ]
       },
       classesJsonData: [], // 班级列表数据
@@ -190,6 +206,8 @@ export default {
   watch: {
     lookDialog(old) {
       if (!old) {
+        this.unitAccount = '',
+        this.unitPassword = '',
         this.unitForm = {
           unitId: '',
           unitImg: '',
@@ -204,6 +222,8 @@ export default {
     },
     insertDialog(old) {
       if (!old) {
+        this.unitAccount = '',
+        this.unitPassword = '',
         this.unitForm = {
           unitId: '',
           unitImg: '',
@@ -214,18 +234,26 @@ export default {
           unitAccount: '',
           unitPassword: ''
         }
+        
+        this.$nextTick(function () {
+          this.$refs['classForm'].clearValidate();
+        })
       }
     },
     unitAccount() {
-      this.unitAccount = this.unitAccount.replace(/[\W]/g,'')
-      this.unitForm.unitAccount = this.unitAccount
+      this.unitForm.unitAccount = this.unitAccount.trim()
     },
     unitPassword() {
-      this.unitPassword = this.unitPassword.replace(/[\W]/g,'')
-      this.unitForm.unitPassword = this.unitPassword
+      this.unitForm.unitPassword = this.unitPassword.trim()
     }
   },
   created() {
+    if (this.$route.query.type !== 'undefined' && this.$route.query.type === 1) {
+      setTimeout(() => {
+        this.insertOrModifyModel = 0
+        this.insertDialog = true
+      }, 500)
+    }
     this.schoolId = this.$store.getters.schoolId
     this.requestCoopeUnitJsonData()
   }, 
@@ -274,12 +302,14 @@ export default {
         this.unitForm.unitMsg = row.brief
         this.unitForm.unitAccount = row.usernumber
         this.unitForm.unitPassword = row.userpass
+        this.unitAccount = row.usernumber
+        this.unitPassword = row.userpass
       }
       this.insertDialog = true
     },
     // 提交
     submitForm(formName) {
-      this.$refs[formName].validate((valid) => {
+      this.$refs.classForm.validate((valid) => {
         if (valid) {
           if (this.insertOrModifyModel === 0) {
             this.insertClassesApi(formName)
@@ -300,6 +330,7 @@ export default {
       this.unitForm.unitMsg = row.brief
       this.unitForm.unitAccount = row.usernumber
       this.unitForm.unitPassword = row.userpass
+      console.log(this.unitForm.unitImg)
       this.lookDialog = true
     },
     // 添加企业

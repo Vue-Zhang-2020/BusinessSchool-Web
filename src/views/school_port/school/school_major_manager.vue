@@ -67,7 +67,7 @@
           <el-input v-model="majorForm.majorName" maxlength="40" style="width: 80%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="专业人数：" prop="majorPerson" :label-width="formLabelWidth">
-          <el-input v-model="majorForm.majorPerson" onKeypress="return (/[\d]/.test(String.fromCharCode(event.keyCode)))" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input-number :min="1" :max="9999" :controls="false" v-model="majorForm.majorPerson" onKeypress="return (/[\d]/.test(String.fromCharCode(event.keyCode)))" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input-number>
           <span>  人</span>
         </el-form-item>
       </el-form>
@@ -111,6 +111,7 @@ export default {
   },
   created() {
     this.schoolId = this.$store.getters.schoolId
+    console.log(this.schoolId)
     this.requestMajorJsonData()
   },
   watch: {

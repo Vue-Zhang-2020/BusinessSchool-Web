@@ -166,7 +166,7 @@
           <el-form-item label="" prop="teachingPlanIntegral" :label-width="formLabelWidth">
             <div class="title-box">
               <span class="title-desc">获取积分</span>
-                <el-input-number :min="1" :max="9999" :controls="false" v-model="teachingPlanForm.teachingPlanIntegral" style="width: 10%; margin: 0 8px;" placeholder="请输入" autocomplete="off"></el-input-number>
+                <el-input-number :min="1" :max="9999" :step="1" :step-strictly="true" :controls="false" v-model="teachingPlanForm.teachingPlanIntegral" style="width: 10%; margin: 0 8px;" placeholder="请输入" autocomplete="off"></el-input-number>
               <span class="title-desc title-right">以上</span>
             </div>
           </el-form-item>
@@ -195,21 +195,22 @@
           <el-button class="search-btn" @click="searchFirm">搜索</el-button>
         </el-col>
         <el-col style="text-align: right;" :span="12">
-          <span>还没有你想要的课程？先去 <span style="color: red">上传企业</span> 吧！</span>
+          <span>还没有你想要的课程？先去 <span style="color: red">
+            <router-link :to="{path:'/unit/firm/coop', query:{ type: 1 }}" class="nav-link">上传企业</router-link>
+          </span> 吧！</span>
         </el-col>
       </el-row>
-      <el-table :data="firmJsonData" :row-key="(row) => {return row.id}" ref="firmTable" @selection-change="handleSelectionFirm" height="260">
+      <el-table :data="firmJsonData" row-key="id" ref="firmTable" @selection-change="handleSelectionFirm" height="260">
         <el-table-column
           type="index" label="序号" width="200"></el-table-column>
         <el-table-column
           type="selection"
-          :reserve-selection="true"
           width="200">
         </el-table-column>
         <el-table-column property="comname" label="企业"></el-table-column>
       </el-table>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="skFirmDialog = false">取 消</el-button>
+        <el-button @click="cancelFirm">取 消</el-button>
         <el-button type="primary" @click="checkFirm">确 定</el-button>
       </span>
     </el-dialog>
@@ -335,6 +336,8 @@ export default {
       medalJsonData: [], // 勋章
       courseJsonData: [], // 课程
       examJsonData: [], // 考试
+      defaultSelected: [],
+      copyFirm: [],
       studentJsonData: [],
       integralNumber: '',
       clickMajor: '',
@@ -429,25 +432,16 @@ export default {
     },
     // 显示企业选择
     showFirmModal() {
-      this.requestFirmJsonData()
       this.skFirmDialog = true
+      this.requestFirmJsonData()
     },
     // 搜索企业列表
     searchFirm() {
       if (this.skFirmSearch == '') {
         this.requestFirmJsonData()
       } else {
-        this.searchFirmJsonData()
+        this.requestFirmSearchJsonData()
       }
-    },
-    // 搜索企业列表
-    searchFirmJsonData() {
-      this.$axios.post(this.$global.sApi + '/addcom', JSON.stringify({
-        'type': 4,
-        'work': this.skFirmSearch
-      })).then(res => {
-        this.firmJsonData = res.data.data.data
-      })
     },
     // 企业列表
     requestFirmJsonData() {
@@ -457,7 +451,37 @@ export default {
         'perpage': 9999
       })).then(res => {
         this.firmJsonData = res.data.data[0]
+        setTimeout(() => {
+          this.toggleSelection()
+        }, 200)
       })
+    },
+    requestFirmSearchJsonData() {
+      this.$axios.post(this.$global.sApi + '/findmsg', JSON.stringify({
+        'type': 4,
+        'current_page': 1,
+        'perpage': 9999,
+        'work': this.skFirmSearch
+      })).then(res => {
+        this.firmJsonData = res.data.data[0]
+        setTimeout(() => {
+          this.toggleSelection()
+        }, 200)
+      })
+    },
+    cancelFirm() {
+      this.defaultSelected = []
+      this.copyFirm = []
+      this.skFirmDialog = false
+    },
+    toggleSelection() {
+      this.firmJsonData.forEach(row => {
+        if (this.defaultSelected.includes(row.id)) {
+          this.$refs.firmTable.toggleRowSelection(row, true)
+        } else {
+          this.$refs.firmTable.toggleRowSelection(row, false)
+        }
+      });
     },
     // 显示添加课程
     showCourseModal() {
@@ -532,7 +556,7 @@ export default {
         })
       } else {
         this.requestSchoolJsonData()
-        this.requestStudentInfoJsonData()
+        // this.requestStudentInfoJsonData()
         this.insertObj = true
       }
     },
@@ -545,7 +569,7 @@ export default {
         'phone': '',
         'username': '',
         'proinfoid': parseInt(this.clickMajor),
-        'lclassinfoid': parseInt(this.clickClasses)
+        'classinfoid': parseInt(this.clickClasses)
       })).then(res => {
         // this.total = res.data.data.total
         const json = res.data.data.data
@@ -594,6 +618,9 @@ export default {
       })
     },
     handleClose(tag) {
+      if (this.defaultSelected.indexOf(tag.id) > -1) {
+        this.defaultSelected.splice(this.defaultSelected.indexOf(tag.id), 1)
+      }
       if (this.firmCheck.indexOf(tag) > -1) {
         this.$delete(this.firmCheck, this.firmCheck.indexOf(tag))
       }
@@ -659,7 +686,19 @@ export default {
       }
     },
     handleSelectionFirm(val) {
-      this.firmCheck = val
+      console.log(val)
+      val.forEach(element => {
+        if (!this.defaultSelected.includes(element.id)) {
+          this.defaultSelected.push(element.id)
+          this.copyFirm.push(element)
+        }
+      });
+      if (val.length === 0) {
+        console.log('嗨喽')
+        this.defaultSelected = []
+        this.copyFirm = []
+      }
+      this.firmCheck = this.copyFirm
     },
     checkFirm() {
       this.teachingPlanForm.attendFirm = this.firmCheck
@@ -695,17 +734,16 @@ export default {
     },
     // 院校专业菜单
     handleNodeClick(data) {
-      console.log(data.type)
       if (data.type !== 'undefined' && data.type === 1) {
-        this.teachingPlanForm.teachingPlanSchool = data.id
-        this.clickMajor = 0
-        this.clickClasses = 0
+        // this.teachingPlanForm.teachingPlanSchool = data.id
+        // this.clickMajor = 0
+        // this.clickClasses = 0
       } else if (typeof data.classinfo === "object") {
         this.clickMajor = data.id
       } else {
         this.clickClasses = data.id
+        this.requestStudentInfoJsonData()
       }
-      this.requestStudentInfoJsonData()
     },
     // 树形菜单
     renderContent(h,{node,data,store}) {
@@ -721,7 +759,6 @@ export default {
       this.$refs[formName].validate((valid) => {
         if (valid) {
           if (this.courseCheck.length > 0) {
-                  debugger
             if (this.modify) {
               this.modifyTeachingPlan(formName)
             } else {
@@ -790,7 +827,6 @@ export default {
           type: 'success'
         })
         this.$refs[formName].resetFields()
-        this.teachingPlanForm = {}
         this.firmCheck = []
         this.courseCheck = []
         this.examCheck = []
@@ -798,71 +834,9 @@ export default {
         this.stduentCheck = []
         this.clickClasses = ''
         this.clickMajor = ''
-      })
-    },
-    // 修改教学计划
-    modifyTeachingPlan(formName) {
-      var firmList = ''
-      this.teachingPlanForm.attendFirm.forEach(element => {
-        firmList += element.id + ','
-      });
-      console.log(firmList.substring(0, firmList.length - 1))
-      var courseList = ''
-      this.teachingPlanForm.teachingPlanCourse.forEach(element => {
-        courseList += element.id + ','
-      });
-      var teacherList = ''
-      this.teachingPlanForm.teachingPlanCourse.forEach(element => {
-        teacherList += element.persons + ','
-      });
-      var timeList = ''
-      this.teachingPlanForm.teachingPlanCourse.forEach(element => {
-        timeList += element.ctime + ','
-      });
-      var examList = ''
-      this.teachingPlanForm.teachingPlanExam.forEach(element => {
-        examList += element.id + ','
-      });
-      var medalList = ''
-      this.teachingPlanForm.teachingPlanMedal.forEach(element => {
-        medalList += element.id + ','
-      });
-      var studentList = ''
-      this.teachingPlanForm.teachingPlanObj.forEach(element => {
-        studentList += element.id + ','
-      });
-      this.$axios.post(this.$global.sApi + '/eventlist', JSON.stringify({
-        'scinfoid': firmList.substring(0, firmList.length - 1),
-        'major': this.teachingPlanForm.teachingPlan,
-        'course': courseList.substring(0, courseList.length - 1),
-        'test': examList.substring(0, examList.length - 1),
-        'brief': this.teachingPlanForm.teachingPlanInfo == '' ? '暂无' : this.teachingPlanForm.teachingPlanInfo,
-        'header': this.teachingPlanForm.imageUrl,
-        'schoolid': parseInt(this.teachingPlanForm.teachingPlanSchool),
-        'medal': medalList.substring(0, medalList.length - 1),
-        'points': this.teachingPlanForm.teachingPlanIntegral,
-        'res': this.teachingPlanForm.teachingPlanGrade,
-        'class': this.teachingPlanForm.teachingPlanComplete,
-        'classid': parseInt(this.clickClasses),
-        'classobj': studentList.substring(0, studentList.length - 1),
-        'persons': teacherList.substring(0, teacherList.length - 1),
-        'classtime': timeList.substring(0, timeList.length - 1),
-        'type': 3
-      })).then(res => {
-        this.$message({
-          message: '修改成功',
-          type: 'success'
-        })
-        this.$refs[formName].resetFields()
-        this.teachingPlanForm = {}
-        this.firmCheck = []
-        this.courseCheck = []
-        this.examCheck = []
-        this.medalCheck = []
-        this.stduentCheck = []
-        this.clickClasses = ''
-        this.clickMajor = ''
-        this.toBack()
+        this.copyFirm = []
+        this.defaultSelected = []
+        this.$router.go(0);
       })
     },
     toBack() {

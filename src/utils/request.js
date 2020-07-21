@@ -35,15 +35,11 @@ service.interceptors.response.use(
      * code为非401权限不足，非20001 表示登录错误,50000以上全是错误代码
      */
     const res = response.data
-    if (response.status == '401' || response.status == '500' || response.status == '20002' || response.status == '401' || response.status > '50000') {
-      Message({
-        message: response.msg,
-        type: 'error',
-        duration: 5 * 1000
-      })
-      return Promise.reject('error')
-    } else {
+    if (response.data.status == '200') {
       return response.data
+    } else {
+      Message.error(response.data.msg)
+      return Promise.reject(response.data.msg)
     }
   },
   error => {

@@ -67,7 +67,7 @@
               label="出生年月"
               width="110">
               <template slot-scope="scope">
-                <span>{{scope.row.age.substring(2, scope.row.age.indexOf('月') + 1)}}</span>
+                <span>{{scope.row.age !== null ? scope.row.age.substring(2, scope.row.age.indexOf('月') + 1) : '暂无'}}</span>
               </template>
             </el-table-column>
             <el-table-column
@@ -117,7 +117,7 @@
     <el-dialog :title="insertOrModifyModel === 0 ? '添加学生资料' : '编辑学生资料'" width="40%" :visible.sync="insertSingleStudentInfoDialog">
       <el-form :model="studentInfoForm" :rules="rules" ref="studentForm">
         <el-form-item label="姓名：" prop="name" :label-width="formLabelWidth">
-          <el-input v-model="studentInfoForm.name" style="width: 37%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input v-model.trim="studentInfoForm.name" style="width: 37%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="专业：" prop="major" :label-width="formLabelWidth">
           <el-select v-model="studentInfoForm.major" style="width: 37%" placeholder="请选择" @change="formMajorSelect">
@@ -148,23 +148,23 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="班级：" prop="classes" :label-width="formLabelWidth">
+        <el-form-item label="班级：" prop="classesId" :label-width="formLabelWidth">
           <el-select v-model="studentInfoForm.classesId" value-key="id" style="width: 37%" placeholder="请选择" @change="formClassesSelect">
             <el-option
-              v-for="item in classesOptions"
+              v-for="item in majorToClassesOptions"
               :key="item.id"
               :label="item.classname"
-              v-bind:value="item.id">
+              :value="parseInt(item.id)">
             </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="联系方式：" prop="photo" :label-width="formLabelWidth">
-          <el-input v-model="studentInfoForm.photo" maxlength="11" style="width: 60%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input v-model.trim="studentInfoForm.photo" maxlength="11" style="width: 60%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="insertSingleStudentInfoDialog = false">取 消</el-button>
-        <el-button type="primary" @click="submitForm('studentForm')">确定添加</el-button>
+        <el-button type="primary" @click="submitForm('studentForm')">{{ insertOrModifyModel === 0 ? '确认添加' : '确认修改' }}</el-button>
       </div>
     </el-dialog>
     <!-- 批量录入学生资料 -->
@@ -175,10 +175,13 @@
       element-loading-text="拼命上传中...请勿离开当前页面"
       element-loading-spinner="el-icon-loading"
       width="60%">
-      <div class="batch-box" @click="downloadModal">
+      <!-- <div class="batch-box" @click="downloadModal"> -->
+      <div class="batch-box">
         <img src="../../../assets/page/excel.png" width="16" height="16" alt="">
         <span class="batch-title">学生资料模板</span>
-        <span class="batch-msg">（点击下载模板）</span>
+        <span class="batch-msg">
+          <a href="http://mrcba.bbddp.com/article/批量导入模板.xlsx">（点击下载模板）</a>
+        </span>
       </div>
       <div class="batch-desc">
         <span>
@@ -226,6 +229,20 @@ import {formatDate} from '../../../utils/formatDate'
 export default {
   name: 'info',
   data () {
+    const validateName = (rule, value, callback) => {
+      if (value.trim().length > 1) {
+        callback();
+      } else {
+        callback(new Error("请输入正确的名称"));
+      }
+    };
+    const validatePhone = (rule, value, callback) => {
+      if (value.trim().length === 11) {
+        callback();
+      } else {
+        callback(new Error("手机号必须是11位"));
+      }
+    };
     return {
       schoolId: 0, // 学校Id
       major: '', // 专业
@@ -243,6 +260,7 @@ export default {
       deleteStudentDialog: false, // 删除Dialog
       batchDialog: false,
       formLabelWidth: '120px',
+      majorToClassesOptions: [],
       gradeOptions: [ // 年级Json
         {
           id: '1',
@@ -272,16 +290,12 @@ export default {
         major: '',
         birthday: '',
         grade: '',
-        classesId: 0,
-        classes: {
-          classname: '',
-          id: ''
-        },
+        classesId: '',
         photo: ''
       },
       rules: {
         name: [
-          { required: true, message: '请输入姓名', trigger: 'blur' }
+          { required: true, validator: validateName, trigger: 'blur' }
         ],
         major: [
           { required: true, message: '请选择专业', trigger: 'change' }
@@ -292,11 +306,11 @@ export default {
         grade: [
           { required: true, message: '请选择年级', trigger: 'change' }
         ],
-        classes: [
+        classesId: [
           { required: true, message: '请选择班级', trigger: 'change' }
         ],
         photo: [
-          { required: true, message: '请输入联系方式', trigger: 'blur' }
+          { required: true, validator: validatePhone, trigger: 'blur' }
         ]
       },
       initData: [],
@@ -312,7 +326,7 @@ export default {
   },
   created() {
     this.schoolId = this.$store.getters.schoolId
-    this.requestStudentInfoJsonData()
+    this.requestStudentInfoJsonData(0, 0)
     this.requestSchoolJsonData()
     this.requestMajorJsonData()
   },
@@ -326,18 +340,18 @@ export default {
         this.studentInfoForm.birthday = ''
         this.studentInfoForm.grade = ''
         this.studentInfoForm.classesId = 0
-        this.studentInfoForm.classes.classname = ''
         this.studentInfoForm.photo = ''
+        this.majorToClassesOptions = []
       }
     }
   },
   methods: {
     handleSizeChange(val) {
       this.pagesize = val
-      this.requestStudentInfoJsonData()
+      this.requestStudentInfoJsonData(this.major, this.classes)
     },
     handleCurrentChange(val) {
-      this.requestStudentInfoJsonData()
+      this.requestStudentInfoJsonData(this.major, this.classes)
     },
     // 添加学生资料
     showInserModal(index, row, flag) {
@@ -347,10 +361,9 @@ export default {
         this.studentInfoForm.id = row.id
         this.studentInfoForm.name = row.username
         this.studentInfoForm.major = row.proname
-        this.studentInfoForm.birthday = this.stringToDate(row.age)
+        this.isMajorIdToClasses(row.proinfoid)
+        this.studentInfoForm.birthday = row.age !== null ? this.stringToDate(row.age) : new Date()
         this.studentInfoForm.grade = row.live
-        this.studentInfoForm.classes.classname = row.classname
-        this.studentInfoForm.classes.id = row.classinfoid
         this.studentInfoForm.classesId = parseInt(row.classinfoid)
         this.studentInfoForm.photo = row.phone
       }
@@ -369,7 +382,6 @@ export default {
       this.major = ''
       this.classes = ''
       this.classesOptions = this.initData
-      console.log(this.classesOptions)
       this.requestStudentInfoJsonData(0, 0)
     },
     // 清空班级筛选
@@ -396,7 +408,7 @@ export default {
         'phone': '',
         'username': this.searchContent,
         'proinfoid': major,
-        'lclassinfoid': classes
+        'classinfoid': classes
       })).then(res => {
         this.total = res.data.data.total
         const json = res.data.data.data
@@ -447,7 +459,7 @@ export default {
           type: 'success'
         })
         this.deleteStudentDialog = false
-        this.requestStudentInfoJsonData()
+        this.requestStudentInfoJsonData(this.major, this.classes)
       })
     },
     // 专业选择
@@ -461,24 +473,47 @@ export default {
     },
     // 表单专业选择
     formMajorSelect() {
-
+      this.majorToClassesOptions = null
+      this.studentInfoForm.classesId = ''
+      this.$axios.post(this.$global.sApi + '/classlist', JSON.stringify({
+        'scinfoid': this.schoolId,
+        'proinfoid': this.studentInfoForm.major
+      })).then(res => {
+        this.majorToClassesOptions = res.data.data[0]
+      })
     },
     // 表单班级选择
     formClassesSelect(e) {
-      
+      if (this.studentInfoForm.major === '') {
+        this.$message({
+          message: '请先选择专业',
+          type: 'warning'
+        })
+      }
     },
     // 院校专业菜单
     handleNodeClick(data) {
       if (data.type !== 'undefined' && data.type === 1) {
         this.schoolId = data.id
-        this.clickMajor = 0
-        this.clickClasses = 0
+        this.major = ''
+        this.classes = ''
       } else if (typeof data.classinfo === "object") {
-        this.clickMajor = parseInt(data.id)
+        this.major = parseInt(data.id)
+        this.requestClassesJsonData()
+        this.classesOptions = this.initData
+        this.classes = ''
       } else {
-        this.clickClasses = parseInt(data.id)
+        this.classes = parseInt(data.id)
       }
-      this.requestStudentInfoJsonData(this.clickMajor, this.clickClasses)
+      this.requestStudentInfoJsonData(this.major, this.classes)
+    },
+    isMajorIdToClasses(majorId) {
+      this.$axios.post(this.$global.sApi + '/classlist', JSON.stringify({
+        'scinfoid': this.schoolId,
+        'proinfoid': majorId
+      })).then(res => {
+        this.majorToClassesOptions = res.data.data[0]
+      })
     },
     // 树形菜单
     renderContent(h,{node,data,store}) {
@@ -513,7 +548,6 @@ export default {
           navigator.msSaveBlob(blob, fileName)
         }
       }).catch((error) => {
-        console.log(error)
         // 关闭loading
         this.loading = false
       })
@@ -595,8 +629,7 @@ export default {
         'username': this.studentInfoForm.name,
         'age': formatDate(this.studentInfoForm.birthday, 'yyyy年MM月dd日'),
         'live': this.studentInfoForm.grade,
-        'classname': this.studentInfoForm.classes.classname,
-        'classinfoid': parseInt(this.studentInfoForm.classes.id),
+        'classinfoid': parseInt(this.studentInfoForm.classesId),
         'scinfoid': this.schoolId,
         'phone': this.studentInfoForm.photo,
         'type': 1
@@ -607,7 +640,7 @@ export default {
           message: '添加成功',
           type: 'success'
         })
-        this.requestStudentInfoJsonData()
+        this.requestStudentInfoJsonData(this.major, this.classes)
       })
     },
     // 编辑学生资料
@@ -617,8 +650,7 @@ export default {
         'username': this.studentInfoForm.name,
         'age': formatDate(this.studentInfoForm.birthday, 'yyyy年MM月dd日'),
         'live': this.studentInfoForm.grade,
-        'classname': this.studentInfoForm.classes.classname,
-        'classinfoid': parseInt(this.studentInfoForm.classes.id),
+        'classinfoid': parseInt(this.studentInfoForm.classesId),
         'phone': this.studentInfoForm.photo,
         'scinfoid': this.schoolId,
         'type': 2
@@ -629,14 +661,14 @@ export default {
         this.studentInfoForm.major = ''
         this.studentInfoForm.birthday = ''
         this.studentInfoForm.grade = ''
-        this.studentInfoForm.classes.classname = ''
+        this.studentInfoForm.classesId = ''
         this.studentInfoForm.photo = ''
         this.$refs[formName].resetFields();
         this.$message({
           message: '编辑成功',
           type: 'success'
         })
-        this.requestStudentInfoJsonData()
+        this.requestStudentInfoJsonData(this.major, this.classes)
       })
     }
   }

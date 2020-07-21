@@ -85,10 +85,10 @@
           <el-input v-model="schoolForm.schoolName" style="width: 40%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="初始账号：" prop="schoolAccount" :label-width="formLabelWidth">
-          <el-input v-model="schoolForm.schoolAccount" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
+          <el-input v-model="schoolAccount" minlength="8" maxlength="40" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="初始密码：" prop="schoolPassword" :label-width="formLabelWidth">
-          <el-input v-model="schoolForm.schoolPassword" style="width: 40%" placeholder="8-20位必须包含数字及字母" autocomplete="off"></el-input>
+          <el-input v-model="schoolPassword" minlength="8" maxlength="20" style="width: 40%" placeholder="8-20位必须包含数字及字母" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -135,6 +135,22 @@
 export default {
   name: '',
   data () {
+    const validateUnitAccount = (rule, value, callback) => {
+      var reg = new RegExp(/[A-Za-z].*[0-9]|[0-9].*[A-Za-z]/);
+      if (value.length > 7 && value.length < 41 && reg.test(value)) {
+        callback();
+      } else {
+        callback(new Error("只支持数字和英文字母输入"));
+      }
+    };
+    const validateUnitPassword = (rule, value, callback) => {
+      var reg = new RegExp(/[A-Za-z].*[0-9]|[0-9].*[A-Za-z]/);
+      if (value.length > 7 && value.length < 21 && reg.test(value)) {
+        callback();
+      } else {
+        callback(new Error("8-20位必须包含数字及字母"));
+      }
+    };
     return {
       total: 0,
       currentPage: 1,
@@ -143,6 +159,8 @@ export default {
       lookDialog: false,
       formLabelWidth: '110px',
       insertOrModifyModel: 0, // 0 insert 1 modify
+      schoolAccount: '',
+      schoolPassword: '',
       schoolForm: {
         schoolId: '',
         schoolName: '',
@@ -156,10 +174,10 @@ export default {
           { required: true, message: '请输入名称', trigger: 'blur' }
         ],
         schoolAccount: [
-          { required: true, message: '请输入初始账号', trigger: 'blur' }
+          { required: true, trigger: 'blur', validator: validateUnitAccount }
         ],
         schoolPassword: [
-          { required: true, message: '请输入初始密码', trigger: 'blur' }
+          { required: true, trigger: 'blur', validator: validateUnitPassword }
         ]
       },
       classesJsonData: [], // 班级列表数据
@@ -172,6 +190,8 @@ export default {
   watch: {
     lookDialog(old) {
       if (!old) {
+        this.schoolAccount = '',
+        this.schoolPassword = '',
         this.schoolForm = {
           schoolId: '',
           schoolName: '',
@@ -184,6 +204,8 @@ export default {
     },
     insertDialog(old) {
       if (!old) {
+        this.schoolAccount = '',
+        this.schoolPassword = '',
         this.schoolForm = {
           schoolId: '',
           schoolName: '',
@@ -193,6 +215,12 @@ export default {
           schoolMajorData: []
         }
       }
+    },
+    schoolAccount() {
+      this.schoolForm.schoolAccount = this.schoolAccount.trim()
+    },
+    schoolPassword() {
+      this.schoolForm.schoolPassword = this.schoolPassword.trim()
     }
   },
   methods: {
@@ -258,7 +286,7 @@ export default {
     showLookModal(index, row) {
       this.$axios.post(this.$global.sApi + '/addscuser', JSON.stringify({
         'type': 4,
-        'id': row.id
+        'id': row.scinfo_id
       })).then(res => {
         this.schoolForm.schoolName = row.scname
         this.schoolForm.schoolPerson = row.sumnum
@@ -288,7 +316,7 @@ export default {
     // 编辑学校
     modifyClassesApi(formName) {
       this.$axios.post(this.$global.sApi + '/addscuser', JSON.stringify({
-        'scnameid': this.schoolId,
+        'scnameid': parseInt(this.schoolForm.schoolId),
         'scname': this.schoolForm.schoolName,
         'userpass': this.schoolForm.schoolPassword,
         'id': parseInt(this.schoolForm.schoolId),

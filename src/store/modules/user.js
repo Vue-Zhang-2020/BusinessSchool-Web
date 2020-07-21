@@ -15,17 +15,20 @@ import {
   notFoundRouter
 } from '@/router';
 const user = {
-  state: {
-    token: getToken(),
-    name: '',
-    avatar: '',
-    schoolId: '',
-    roles: [],
-    routers: constantRoutes,
-    addRouters: [],
-    tRouters: constantRoutes,
-    addTRouters: [],
-    pathRouter: ''
+  state() {
+    const SCHOOL_ID = localStorage.getItem('schoolId')
+    return {
+      token: getToken(),
+      name: '',
+      avatar: '',
+      schoolId: SCHOOL_ID,
+      roles: [],
+      routers: constantRoutes,
+      addRouters: [],
+      tRouters: constantRoutes,
+      addTRouters: [],
+      pathRouter: ''
+    }
   },
 
   mutations: {
@@ -75,11 +78,10 @@ const user = {
       return new Promise((resolve, reject) => {
         login(username, userInfo.password).then(response => {
           const data = response.data
-          console.log(parseInt(data[0].scnameid))
           setToken(data[0].api_token)
           commit('SET_TOKEN', data[0].api_token)
           commit('SET_SCHOOL_ID', parseInt(data[0].scnameid))
-          sessionStorage.setItem('schoolId', parseInt(data[0].scnameid))
+          localStorage.setItem('schoolId', parseInt(data[0].scnameid))
           resolve(response)
         }).catch(error => {
           reject('错误' + error)
@@ -469,19 +471,9 @@ const user = {
               }
             ]
           }
-          // let tRouters = []
-          // json3.router.forEach(element => {
-          //   if (element.children) {  
-          //     tRouters.push(...element.children)
-          //   }
-          // });
-          // console.log(tRouters)
-          // const data = response.data
           commit('SET_NAME', 'data.name')
           commit('SET_ROLES', sessionStorage.getItem('roles'))
           commit('SET_AVATAR', 'data.avatar')
-          // commit('SET_SCHOOL_ID', 1)
-          // commit('SET_ROUTERS', routerFormat(data.routers))
           console.log(sessionStorage.getItem('roles'))
           commit('SET_ROUTERS', routerFormat(
             sessionStorage.getItem('roles') === '1' ? json.router 
@@ -516,6 +508,8 @@ const user = {
     }) {
       return new Promise(resolve => {
         commit('LOGOUT', '')
+        sessionStorage.removeItem('roles')
+        localStorage.removeItem('schoolId')
         removeToken()
         resolve()
       })

@@ -82,10 +82,10 @@
           </el-select>
         </el-form-item>
         <el-form-item label="班级人数：" prop="classPerson" :label-width="formLabelWidth">
-          <el-input v-model="classForm.classPerson" type="number" maxlength="4" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input>
+          <el-input-number :min="1" :step="1" :step-strictly="true" :max="9999" :controls="false" v-model="classForm.classPerson" type="number" maxlength="4" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input-number>
           <span>  人</span>
         </el-form-item>
-      </el-form>
+      </el-form>  
       <div slot="footer" class="dialog-footer">
         <el-button @click="insertDialog = false">取 消</el-button>
         <el-button type="primary" @click="submitForm('classForm')">{{ insertOrModifyModel == 0 ? '确认添加' : '确认编辑' }}</el-button>

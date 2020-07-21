@@ -26,7 +26,7 @@
             <span>其他设置</span>
           </div>
           <el-form-item label="考试时长：" prop="examTime" :label-width="formLabelWidth">
-            <el-input v-model="examForm.examTime" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input>
+            <el-input-number :min="1" :step="1" :step-strictly="true" :controls="false" v-model="examForm.examTime" style="width: 20%" placeholder="请输入" autocomplete="off"></el-input-number>
             <span>分钟</span>
           </el-form-item>
           <el-form-item label="等级积分奖励：" prop="courseType" :label-width="formLabelWidth">
@@ -35,7 +35,7 @@
               <el-table-column property="id" label="奖励积分">
                 <template slot-scope="scope">
                   <div>
-                    <el-input size="small" v-model="examForm.examLevel[scope.$index].integral" style="width: 40%" placeholder="请输入"></el-input>
+                    <el-input-number :min="1" :step="1" :step-strictly="true" :controls="false" size="small" v-model="examForm.examLevel[scope.$index].integral" style="width: 40%" placeholder="请输入"></el-input-number>
                   </div>
                 </template>
               </el-table-column>
@@ -143,11 +143,11 @@
       :visible.sync="successDialog"
       width="40%">
       <span>保存成功！</span>
-      <p style="color: rgba(0,0,0,0.45);font-size: 12px;">{{count}}s后跳转到课程中心页面</p> 
-      <span slot="footer" class="dialog-footer">
+      <p style="color: rgba(0,0,0,0.45);font-size: 12px;">{{count}}s后跳转到考试中心页面</p> 
+      <!-- <span slot="footer" class="dialog-footer">
         <el-button @click="successDialog = false">取 消</el-button>
-        <el-button type="primary" @click="insertOrModifyModal = false">确 认</el-button>
-      </span>
+        <el-button type="primary" @click="toList">确 认</el-button>
+      </span> -->
     </el-dialog>
   </div>
 </template>
@@ -232,6 +232,20 @@ export default {
       if (!val) {
         this.requestExamJsonData()
       }
+    },
+    insertOrModifyModal(val) {
+      if (!val) {
+        this.examForm.examId = ''
+        this.examForm.examName = ''
+        this.examForm.examImg = ''
+        this.examForm.examDesc = ''
+        this.examForm.examTime = ''
+        this.examForm.examLevel[0].integral = ''
+        this.examForm.examLevel[1].integral = ''
+        this.examForm.examLevel[2].integral = ''
+        this.examForm.examLevel[3].integral = ''
+        this.examForm.examLevel[4].integral = ''
+      }
     }
   },
   created() {
@@ -273,12 +287,13 @@ export default {
     // 显示添加课程Dialog
     showInserModal(flag, obj) {
       if (flag === 1) {
+        this.modifyTitle = flag
         this.modifyDialog = true
         this.examForm.examId = obj.id
         this.examForm.examName = obj.testname
         this.examForm.examImg = obj.testheader
         this.examForm.examDesc = obj.brief
-        this.examForm.examTime = obj.testtime
+        this.examForm.examTime = obj.length
         this.examForm.examLevel[0].integral = obj.pointss[0]
         this.examForm.examLevel[1].integral = obj.pointss[1]
         this.examForm.examLevel[2].integral = obj.pointss[2]
@@ -367,17 +382,14 @@ export default {
         })
       }
     },
-    submitModify(formName) {
-      this.$refs[formName].validate((valid) => {
-        if (valid) {
-          this.modifyExamApi()
-        }
-      })
-    },
     submitInsert(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          this.insertExamApi()
+          if (this.modifyTitle === 0) {
+            this.insertExamApi()
+          } else {
+            this.modifyExamApi()
+          }
         }
       })
     },
@@ -454,6 +466,10 @@ export default {
         }
         },1000)
       }
+    },
+    toList() {
+      this.insertOrModifyModal = false
+      this.successDialog = false
     }
   }
 }
