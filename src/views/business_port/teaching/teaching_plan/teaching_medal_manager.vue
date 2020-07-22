@@ -151,6 +151,9 @@ export default {
     }
   },
   created() {
+    if (this.$route.query.type !== 'undefined' && this.$route.query.type === 1) {
+      this.insertOrModifyDialog = true
+    }
     this.requestMedalJsonData()
   },
   methods: {

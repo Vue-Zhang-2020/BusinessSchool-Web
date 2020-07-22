@@ -85,7 +85,7 @@
           <el-input v-model="schoolForm.schoolName" style="width: 40%" placeholder="请输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="初始账号：" prop="schoolAccount" :label-width="formLabelWidth">
-          <el-input v-model="schoolAccount" minlength="8" maxlength="40" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
+          <el-input v-model="schoolAccount" maxlength="40" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="初始密码：" prop="schoolPassword" :label-width="formLabelWidth">
           <el-input v-model="schoolPassword" minlength="8" maxlength="20" style="width: 40%" placeholder="8-20位必须包含数字及字母" autocomplete="off"></el-input>
@@ -136,8 +136,8 @@ export default {
   name: '',
   data () {
     const validateUnitAccount = (rule, value, callback) => {
-      var reg = new RegExp(/[A-Za-z].*[0-9]|[0-9].*[A-Za-z]/);
-      if (value.length > 7 && value.length < 41 && reg.test(value)) {
+      var reg = new RegExp(/[A-Za-z].*[0-9]|[0-9]|[A-Za-z]/);
+      if (value.length < 41 && reg.test(value)) {
         callback();
       } else {
         callback(new Error("只支持数字和英文字母输入"));
@@ -265,6 +265,8 @@ export default {
         this.schoolForm.schoolId = row.id
         this.schoolForm.schoolName = row.scname
         this.schoolForm.schoolAccount = row.usernumber
+        this.schoolAccount = row.usernumber
+        this.schoolPassword = row.userpass
       }
       this.insertDialog = true
     },

@@ -20,9 +20,49 @@
           <span class="top-title">课程章节</span>
           <div class="top-control">
             <el-timeline :reverse="reverse">
+              <!-- 考试 -->
+              <el-timeline-item
+                v-for="(activity, index) in planExamSection"
+                :key="index">
+                <div class="courseItem">
+                  <img :src="activity.testheader" width="278" height="160" alt="">
+                  <div class="courseItemTile">
+                    <span v-if="activity.status == '3'" class="no_start_icon">已结束</span>
+                    <span v-if="activity.status == '1'" class="start_icon">未开始</span>
+                    <p class="courseItem-title">{{activity.testname}}</p>
+                  </div>
+                  <div class="course-box">
+                    <span class="label-title">监考老师：
+                      <span class="value-title">{{activity.persons||'暂无'}}</span>
+                    </span>
+                  </div>
+                  <div class="course-box">
+                    <span class="label-title">时&nbsp;&nbsp;&nbsp;间：<span class="value-title">{{activity.testtime}}</span></span>
+                  </div>
+                  <div class="course-box">
+                    <el-upload
+                      class="avatar-uploader"
+                      action
+                      :show-file-list="false"
+                      multiple
+                      :http-request="uploadMp4">
+                      <img v-if="img" :src="img" class="avatar">
+                      <i class="el-icon-plus avatar-uploader-icon" @click="check(activity.id)"></i>
+                    </el-upload>   
+                  </div>
+                  <span class="msg-title">上传学生上课录像</span>
+                  <div class="control-box">
+                    <div class="control-item" @click="uploadExamGrade(activity)">
+                      <img src="../../../../assets/page/student.png" width="16" height="16" alt="">
+                      <span class="control-title">上传考试成绩</span>
+                    </div>
+                  </div>
+                </div>
+              </el-timeline-item>
+              <!-- 课程 -->
               <el-timeline-item
                 v-for="(activity, index) in planSection"
-                :key="index">
+                :key="(index + 1) * 3">
                 <div class="courseItem">
                   <img :src="activity.header" width="278" height="160" alt="">
                   <div class="courseItemTile">
@@ -50,9 +90,17 @@
                   </div>
                   <span class="msg-title">上传学生上课录像</span>
                   <div class="control-box">
-                    <div class="control-item" @click="lookStudentGrade(activity)">
+                    <div v-if="activity.status == '3' && activity.res.length > 0" class="control-item" @click="lookStudentGrade(activity)">
                       <img src="../../../../assets/page/student.png" width="16" height="16" alt="">
                       <span class="control-title">点击查看学生课后习题并上传成绩</span>
+                    </div>
+                    <div v-if="activity.status == '3' && activity.res.length < 1" class="control-item">
+                      <img src="../../../../assets/page/student_no.png" width="16" height="16" alt="">
+                      <span class="control-title" style="color: rgba(0,0,0,0.45);">无考试记录</span>
+                    </div>
+                    <div v-if="activity.status == '1'" class="control-course" @click="modifyCourse(activity.id)">
+                      <img src="../../../../assets/modify.png" width="15" height="15" alt="">
+                      <span>修改课程</span>
                     </div>
                     <div class="control-item" @click="lookCourseTCode">
                       <img src="../../../../assets/page/tcode.png" width="14" class="control-img" height="14" alt="">
@@ -72,7 +120,7 @@
             学校: <span>{{ schoolName }}</span>
           </p>
           <p>
-            班级：<span>banji</span>
+            班级：<span>{{ classname }}</span>
           </p>
           <p>
             课程：<span>{{ courseName }}</span>
@@ -95,6 +143,78 @@
         <span slot="footer" class="dialog-footer">
           <el-button @click="gradeModal = false">取 消</el-button>
           <el-button type="primary" @click="gradeModal = false">确 定</el-button>
+        </span>
+      </el-dialog>
+      <!-- 修改课程 -->
+      <el-dialog title="修改课程" width="70%" :visible.sync="courseDialog">
+        <el-row>
+          <el-col class="row" :span="12">
+            <el-input v-model="courseSearch" style="width: 70%" placeholder="请输入要搜索的内容"></el-input>
+            <el-button class="search-btn" @click="searchCourse">搜索</el-button>
+          </el-col>
+          <el-col style="text-align: right;" :span="12">
+            <span>还没有你想要的课程？先去 <span style="color: red">
+              <router-link :to="{path:'/teaching/course/center', query:{ type: 1 }}" class="nav-link">上传课程</router-link>
+            </span> 吧！</span>
+          </el-col>
+        </el-row>
+        <el-table :data="courseJsonData" :row-key="(row) => {return row.id}" @selection-change="handleSelectionCourse" height="260">
+          <el-table-column
+          :reserve-selection="true"
+            type="selection">
+          </el-table-column>
+          <el-table-column property="typename" width="140" label="课程分类"></el-table-column>
+          <el-table-column property="coursename" width="140" label="课程名称"></el-table-column>
+          <el-table-column property="persons" width="130" label="选择讲师"></el-table-column>
+          <el-table-column property="ctime" label="选择课程时间">
+            <template slot-scope="scope">
+              <el-date-picker
+                v-model="scope.row.ctime"
+                :clearable="false"
+                size="mini"
+                type="datetime"
+                placeholder="选择日期时间">
+              </el-date-picker> 
+            </template>
+          </el-table-column>
+          <el-table-column property="local" label="地点" width="90"></el-table-column>
+        </el-table>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="saveCourse">保存</el-button>
+          <el-button type="primary" @click="issueCourse">发布</el-button>
+        </span>
+      </el-dialog>
+      <!-- 考试成绩上传 -->
+      <el-dialog title="考试成绩上传" width="70%" :visible.sync="examGradeUploadDialog">
+        <div class="gradeInfo">
+          <p>
+            学校: <span>{{ schoolName }}</span>
+          </p>
+          <p>
+            考试：<span>{{ examName }}</span>
+          </p>
+        </div>
+        <el-table :data="classobj" @selection-change="handleSelectionCourse" height="260">
+          <el-table-column type="index" label="序号"></el-table-column>
+          <el-table-column property="scname" label="学生姓名"></el-table-column>
+          <el-table-column property="res" label="成绩">
+            <template slot-scope="scope">
+              <el-input-number v-model="scope.row.res" :min="1" :max="100" :controls="false" :step="0.1" :step-strictly="true"></el-input-number>
+            </template>
+          </el-table-column>
+          <el-table-column property="live" label="等级">
+            <template slot-scope="scope">
+              <span v-if="scope.row.res > 90">A</span>
+              <span v-if="scope.row.res < 90 && scope.row.res > 80">B</span>
+              <span v-if="scope.row.res < 80 && scope.row.res > 70">C</span>
+              <span v-if="scope.row.res < 70 && scope.row.res > 60">D</span>
+              <span v-if="scope.row.res < 60">E</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="examGradeUploadDialog = false">保存</el-button>
+          <el-button type="primary" @click="examGradeUploadDialog = false">发布</el-button>
         </span>
       </el-dialog>
       <el-dialog title="" width="80%" :visible.sync="imgBigModal">
@@ -143,6 +263,9 @@
             class="business-teaching-plan-item">
             <div class="business-course-img-box">
               <img :src="course.header" width="200" height="200" style="height: 160px" alt="">
+              <span v-if="course.status == '1'" class="business_no_start business_status">未开始</span>
+              <span v-if="course.status == '3'" class="business_finish business_status">已结束</span>
+              <span v-if="course.status == '2'" class="business_continue business_status">进行中</span>
             </div>
             <div class="business-course-title-box">
               <p class="plan-title">{{ course.major }}</p>
@@ -205,15 +328,23 @@ export default {
       gradeModal: false,
       imgBigModal: false,
       deleteDialog: false,
+      courseDialog: false,
+      examGradeUploadDialog: false,
+      courseSearch: '', // 搜索课程内容
+      courseJsonData: [], // 课程列表
       deleteTeachingPlanId: '',
       teachingPlanSearch: '', // 搜索
       teachingPlanStatus: '全部', // 计划状态
       teachingPlanJsonData: [],
       reverse: true,
+      classobj: [],
       planSection: [],
+      planExamSection: [],
       activities: [],
       uploadMp4Id: '',
       schoolName: '',
+      classname: '',
+      examName: '',
       courseName: '',
       loading: false,
       showBigImgUrl: '',
@@ -227,7 +358,8 @@ export default {
           ],
           grade: 90
         }
-      ]
+      ],
+      img: ''
     }
   },
   created() {
@@ -343,6 +475,9 @@ export default {
             'Content-type': 'multipart/form-data'
           }
         }).then(res => {
+          console.log(res.data.path)
+          console.log(`${res.data.path}?x-oss-process=video/snapshot,t_1,f_jpg,m_fast,ar_auto`)
+          this.img = `${res.data.path}?x-oss-process=video/snapshot,t_1,f_jpg,m_fast,ar_auto`
           this.loading = false
         }).catch(err => {
           this.loading = false
@@ -374,9 +509,11 @@ export default {
         'eventid': id
       })).then(res => {
         this.planSection = res.data.data[0].courseinfo
+        this.planExamSection = res.data.data[0].testinfo
+        this.classobj = res.data.data[0].classobj
         this.activities = res.data.data
-        console.log(this.activities)
         this.schoolName = this.activities[0].scname.scname
+        this.classname = this.activities[0].classname.classname
       })
     },
     check(id) {
@@ -403,6 +540,55 @@ export default {
     bigImg(item) {
       this.imgBigModal = true
       this.showBigImgUrl = item
+    },
+    // 搜索课程列表
+    searchCourse() {
+      if (this.courseSearch == '') {
+        this.requestCourseJsonData()
+      } else {
+        this.searchCourseJsonData()
+      }
+    },
+    // 搜索课程列表
+    searchCourseJsonData() {
+      this.$axios.post(this.$global.sApi + '/course', JSON.stringify({
+        'type': 5,
+        'coursename': this.courseSearch
+      })).then(res => {
+        this.courseJsonData = res.data.data[0]
+      })
+    },
+    // 获取课程列表
+    requestCourseJsonData() {
+      this.$axios.post(this.$global.sApi + '/course', JSON.stringify({
+        'type': 4,
+        'current_page': 1,
+        'perpage': 9999
+      })).then(res => {
+        this.courseJsonData = res.data.data.data
+      })
+    },
+    // 选择课程
+    handleSelectionCourse(val) {
+     console.log(val)
+    },
+    // 修改课程
+    modifyCourse() {
+      this.courseDialog = true
+      this.requestCourseJsonData()
+    },
+    // 保存课程
+    saveCourse() {
+      this.courseDialog = false
+    },
+    // 发布课程
+    issueCourse() {
+      this.courseDialog = false
+    },
+    // 显示上传成绩
+    uploadExamGrade(obj) {
+      this.examGradeUploadDialog = true
+      this.examName = obj.testname
     }
   }
 }
@@ -484,6 +670,22 @@ export default {
     cursor: pointer;
   }
 
+  .control-course {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #6A6FCB;
+    border-radius: 2px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+
+  .control-course span {
+    font-size: 12px;
+    color: white;
+    margin-left: 8px;
+  }
+
   .top-course {
     margin-top: 32px;
     margin-bottom: 16px;
@@ -507,4 +709,41 @@ export default {
   .gradeInfo p span {
     color: rgba(0,0,0,0.65);
   }
+
+  .business-course-img-box {
+    position: relative;
+    width: 100%;
+    height: 160px;
+  }
+
+  .business-course-img-box img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+  }
+
+  .business_status {
+    font-size: 12px;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 2px;
+    position: absolute;
+    left: 16px;
+    bottom: 12px;
+  }
+
+  .business_no_start {
+    background-color: #38EBEB;
+  }
+
+  .business_finish {
+    background-color: #979797;
+  }
+
+  .business_continue {
+    background-color: #F1B237;
+  }
+
 </style>

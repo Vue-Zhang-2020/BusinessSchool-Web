@@ -100,7 +100,7 @@
           <el-input type="textarea" v-model="unitForm.unitMsg" style="width: 60%;"></el-input>
         </el-form-item> 
         <el-form-item label="初始账号：" prop="unitAccount" :label-width="formLabelWidth">
-          <el-input v-model="unitAccount" ref="unitAccount" minlength="8" maxlength="40" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
+          <el-input v-model="unitAccount" ref="unitAccount" maxlength="40" style="width: 40%" :disabled="insertOrModifyModel === 1" placeholder="只支持数字和英文字母输入" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="初始密码：" prop="unitPassword" :label-width="formLabelWidth">
           <el-input v-model="unitPassword" ref="unitPassword" minlength="8" maxlength="20" style="width: 40%" placeholder="8-20位必须包含数字及字母" autocomplete="off"></el-input>
@@ -148,8 +148,8 @@ export default {
   name: '',
   data () {
     const validateUnitAccount = (rule, value, callback) => {
-      var reg = new RegExp(/[A-Za-z].*[0-9]|[0-9].*[A-Za-z]/);
-      if (value.length > 7 && value.length < 41 && reg.test(value)) {
+      var reg = new RegExp(/[A-Za-z].*[0-9]|[0-9]|[A-Za-z]/);
+      if (value.length < 41 && reg.test(value)) {
         callback();
       } else {
         callback(new Error("只支持数字和英文字母输入"));

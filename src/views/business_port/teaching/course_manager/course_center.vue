@@ -316,6 +316,19 @@ export default {
     // 显示添加课程Dialog
     showInserModal(flag, obj) {
       if (flag === 1) {
+        this.checkStatus(obj)
+        this.modifyTitle = flag
+      } else {
+        this.requestSchoolJsonData()
+        this.modifyTitle = flag
+        this.insertOrModifyModal = true
+      }
+    },
+    checkStatus(obj) {
+      this.$axios.post(this.$global.sApi + '/typeres', JSON.stringify({
+        'type': 'course',
+        'courseid': obj.id
+      })).then(res => {
         this.requestCouseTypeJsonData()
         this.modifyDialog = true
         this.courseForm.courseId = obj.id
@@ -325,11 +338,12 @@ export default {
         this.courseForm.courseDesc = obj.brief
         this.courseForm.courseIntegral = obj.points
         this.courseForm.courseTime = obj.length
-      } else {
-        this.requestSchoolJsonData()
-        this.modifyTitle = flag
-        this.insertOrModifyModal = true
-      }
+        if (!res.data.msg) { 
+          this.modifyDialog = true
+        } else {
+          this.modifyCourse()
+        }
+      })
     },
     statusChange(e) {
       if (e === '全部') {
@@ -549,5 +563,7 @@ export default {
 </script>
 
 <style scoped>
-
+  .business-course-img-box {
+    height: 160px;
+  }
 </style>

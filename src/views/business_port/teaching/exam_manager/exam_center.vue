@@ -231,10 +231,6 @@ export default {
     insertOrModifyModal(val) {
       if (!val) {
         this.requestExamJsonData()
-      }
-    },
-    insertOrModifyModal(val) {
-      if (!val) {
         this.examForm.examId = ''
         this.examForm.examName = ''
         this.examForm.examImg = ''
@@ -287,8 +283,18 @@ export default {
     // 显示添加课程Dialog
     showInserModal(flag, obj) {
       if (flag === 1) {
+        this.checkStatus(obj)
         this.modifyTitle = flag
-        this.modifyDialog = true
+      } else {
+        this.modifyTitle = flag
+        this.insertOrModifyModal = true
+      }
+    },
+    checkStatus(obj) {
+      this.$axios.post(this.$global.sApi + '/typeres', JSON.stringify({
+        'type': 'test',
+        'testid': obj.id
+      })).then(res => {
         this.examForm.examId = obj.id
         this.examForm.examName = obj.testname
         this.examForm.examImg = obj.testheader
@@ -299,10 +305,12 @@ export default {
         this.examForm.examLevel[2].integral = obj.pointss[2]
         this.examForm.examLevel[3].integral = obj.pointss[3]
         this.examForm.examLevel[4].integral = obj.pointss[4]
-      } else {
-        this.modifyTitle = flag
-        this.insertOrModifyModal = true
-      }
+        if (!res.data.msg) { 
+          this.modifyDialog = true
+        } else {
+          this.modifyCourse()
+        }
+      })
     },
     searchExam() {
       this.requestExamJsonData()

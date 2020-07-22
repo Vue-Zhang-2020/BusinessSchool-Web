@@ -67,7 +67,7 @@
               label="出生年月"
               width="110">
               <template slot-scope="scope">
-                <span>{{scope.row.age !== null ? scope.row.age.substring(2, scope.row.age.indexOf('月') + 1) : '暂无'}}</span>
+                <span>{{scope.row.age !== null ? scope.row.age.substring(2, scope.row.age.indexOf('-') + 3).replace('-', '年') + '月' : '暂无'}}</span>
               </template>
             </el-table-column>
             <el-table-column
@@ -362,7 +362,7 @@ export default {
         this.studentInfoForm.name = row.username
         this.studentInfoForm.major = row.proname
         this.isMajorIdToClasses(row.proinfoid)
-        this.studentInfoForm.birthday = row.age !== null ? this.stringToDate(row.age) : new Date()
+        this.studentInfoForm.birthday = row.age !== null ? row.age : new Date()
         this.studentInfoForm.grade = row.live
         this.studentInfoForm.classesId = parseInt(row.classinfoid)
         this.studentInfoForm.photo = row.phone
@@ -627,7 +627,7 @@ export default {
     insertStudentInfoApi(formName) {
       this.$axios.post(this.$global.sApi + '/addstuinfo', JSON.stringify({
         'username': this.studentInfoForm.name,
-        'age': formatDate(this.studentInfoForm.birthday, 'yyyy年MM月dd日'),
+        'age': formatDate(this.studentInfoForm.birthday, 'yyyy-MM-dd 00:00:00'),
         'live': this.studentInfoForm.grade,
         'classinfoid': parseInt(this.studentInfoForm.classesId),
         'scinfoid': this.schoolId,

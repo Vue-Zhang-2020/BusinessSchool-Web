@@ -15,12 +15,10 @@
             </el-col>
             <el-col class="table-box" :span="19">
               <el-table
-                :row-key="(row) => { row.id }"
                 @selection-change="handleSelectionStudent"
                 :data="studentInfoJsonData"
                 style="width: 100%;">
                 <el-table-column
-                  :reserve-selection="true"
                   type="selection">
                 </el-table-column>
                 <el-table-column
@@ -43,7 +41,7 @@
                   label="出生年月"
                   width="110">
                   <template slot-scope="scope">
-                    <span>{{scope.row.age.substring(2, scope.row.age.indexOf('月') > -1 ? scope.row.age.indexOf('月') + 1 : scope.row.age)}}</span>
+                    <span>{{scope.row.age !== null ? scope.row.age.substring(2, scope.row.age.indexOf('月') > -1 ? scope.row.age.indexOf('月') + 1 : scope.row.age) : '暂无'}}</span>
                   </template>
                 </el-table-column>
                 <el-table-column
@@ -84,7 +82,7 @@
                 v-for="(tag, index) in this.teachingPlanForm.attendFirm"
                 :key="index"
                 :closable="true"
-                class="button-new-tag"
+                class="button-new-tag item_tag"
                 size="small"
                 :type="index == 0 ? '' :
                 index == 1 ? 'success' :
@@ -183,7 +181,7 @@
     <div v-if="!insertObj" class="business-bottom-box">
       <div class="business-control">
         <el-button class="blue-btn-back" @click="toBack">  返回  </el-button>
-        <el-button class="blue-btn-two" style="margin-bottom: 0;">  预览  </el-button>
+        <el-button class="blue-btn-two" style="margin-bottom: 0;" @click="dateFormat">  预览  </el-button>
         <el-button class="blue-btn" style="margin-bottom: 0;" @click="submitTeachingPlan('teachingForm')">  {{modify === true ? '修改' : '发布'}}  </el-button>
       </div>
     </div>
@@ -294,7 +292,9 @@
           <el-button class="search-btn" @click="searchMedal">搜索</el-button>
         </el-col>
         <el-col style="text-align: right;" :span="12">
-          <span>还没有你想要的勋章？先去 <span style="color: red">上传勋章</span> 吧！</span>
+          <span>还没有你想要的勋章？先去 <span style="color: red">
+            <router-link :to="{path:'/teaching/plan/medal', query:{ type: 1 }}" class="nav-link">上传勋章</router-link>
+          </span> 吧！</span>
         </el-col>
       </el-row>
       <el-table :data="medalJsonData" :row-key="(row) => { return row.id }" @selection-change="handleSelectionMedal" tooltip-effect="dark" height="260">
@@ -318,6 +318,7 @@
 </template>
 
 <script>
+import { formatDate } from '../../../../utils/formatDate'
 export default {
   name: '',
   data () {
@@ -686,23 +687,26 @@ export default {
       }
     },
     handleSelectionFirm(val) {
-      console.log(val)
       val.forEach(element => {
         if (!this.defaultSelected.includes(element.id)) {
           this.defaultSelected.push(element.id)
           this.copyFirm.push(element)
         }
       });
-      if (val.length === 0) {
-        console.log('嗨喽')
-        this.defaultSelected = []
-        this.copyFirm = []
-      }
+      // console.log(this.defaultSelected)
+      // console.log(this.copyFirm)
       this.firmCheck = this.copyFirm
     },
     checkFirm() {
-      this.teachingPlanForm.attendFirm = this.firmCheck
-      this.skFirmDialog = false
+      if (this.firmCheck.length > 10) {
+        this.$message({
+          message: '最多只能选择10个，当前已选择：' + this.firmCheck.length + '个',
+          type: 'warning'
+        })
+      } else {
+        this.teachingPlanForm.attendFirm = this.firmCheck
+        this.skFirmDialog = false
+      }
     },
     handleSelectionCourse(val) {
       this.courseCheck = val
@@ -742,6 +746,8 @@ export default {
         this.clickMajor = data.id
       } else {
         this.clickClasses = data.id
+        this.stduentCheck = []
+        this.teachingPlanForm.teachingPlanObj = []
         this.requestStudentInfoJsonData()
       }
     },
@@ -791,7 +797,7 @@ export default {
       });
       var timeList = ''
       this.teachingPlanForm.teachingPlanCourse.forEach(element => {
-        timeList += element.ctime + ','
+        timeList += formatDate(new Date(element.ctime), 'yyyy-MM-dd hh:mm:ss') + ','
       });
       var examList = ''
       this.teachingPlanForm.teachingPlanExam.forEach(element => {
@@ -841,6 +847,9 @@ export default {
     },
     toBack() {
       this.$router.push({ path: '/teaching/plan/list' })
+    },
+    dateFormat() {
+      console.log(formatDate(new Date('2020-12-26 12:23:26'), 'yyyy-MM-dd hh:mm:ss'))
     }
   }
 }
@@ -852,6 +861,8 @@ export default {
     margin-top: 10px;
     flex-direction: row;
     align-items: center;
+    width: 60%;
+    flex-wrap: wrap;
   }
 
   .business-model-page .firm-box .el-tag--small {
@@ -944,5 +955,9 @@ export default {
     display: flex;
     flex-direction: row;
     align-items: center;
+  }
+
+  .item_tag {
+    margin-bottom: 10px;
   }
 </style>
