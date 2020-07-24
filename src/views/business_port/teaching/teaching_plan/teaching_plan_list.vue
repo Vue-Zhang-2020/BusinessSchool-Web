@@ -41,14 +41,24 @@
                   </div>
                   <div class="course-box">
                     <el-upload
+                      v-if="activity.mp4 == null"
                       class="avatar-uploader"
                       action
                       :show-file-list="false"
                       multiple
-                      :http-request="uploadMp4">
-                      <img v-if="img" :src="img" class="avatar">
-                      <i class="el-icon-plus avatar-uploader-icon" @click="check(activity.id)"></i>
-                    </el-upload>   
+                      :http-request="uploadMp4"
+                      >
+                      <i class="el-icon-plus avatar-uploader-icon" @click="check(activity.test_info_id, 'test')"></i>
+                    </el-upload>  
+                    <video ref="vVideo"
+                      v-if="activity.mp4 !== null"
+                      style="width: 200px; height: 170px;"
+                      controls
+                      webkit-playsinline
+                      playsinline
+                      x5-playsinline
+                      :src="activity.mp4"
+                      ></video> 
                   </div>
                   <span class="msg-title">上传学生上课录像</span>
                   <div class="control-box">
@@ -80,13 +90,23 @@
                   </div>
                   <div class="course-box">
                     <el-upload
+                      v-if="activity.mp4 == null"
                       class="avatar-uploader"
                       action
                       :show-file-list="false"
                       multiple
                       :http-request="uploadMp4">
-                      <i class="el-icon-plus avatar-uploader-icon" @click="check(activity.id)"></i>
-                    </el-upload>   
+                      <i class="el-icon-plus avatar-uploader-icon" @click="check(activity.id, 'course')"></i>
+                    </el-upload>
+                    <video ref="vVideo"
+                      v-if="activity.mp4 !== null"
+                      style="width: 200px; height: 170px;"
+                      controls
+                      webkit-playsinline
+                      playsinline
+                      x5-playsinline
+                      :src="activity.mp4"
+                      ></video>
                   </div>
                   <span class="msg-title">上传学生上课录像</span>
                   <div class="control-box">
@@ -126,23 +146,23 @@
             课程：<span>{{ courseName }}</span>
           </p>
         </div>
-        <el-table :data="medalJsonData" tooltip-effect="dark" height="260" style="margin-top: 30px">
-          <el-table-column property="id" width="80" label="序号"></el-table-column>
-          <el-table-column property="name" width="130" label="学生名称"></el-table-column>
-          <el-table-column property="img" width="500" label="课后习题（点击放大）">
+        <el-table :data="courseAnswer" tooltip-effect="dark" height="260" style="margin-top: 30px">
+          <el-table-column type="index" width="80" label="序号"></el-table-column>
+          <el-table-column property="stuname" width="130" label="学生名称"></el-table-column>
+          <el-table-column property="img" width="750" label="课后习题（点击放大）">
             <template slot-scope="scope">
-              <img v-for="(item, index) in scope.row.img" :key="index" @click="bigImg(item)" width="59" height="59" :src="item" alt="">
+              <img v-for="(item, index) in scope.row.img" :key="index" @click="bigImg(item.header)" width="59" height="59" :src="item.header" alt="">
             </template>
           </el-table-column>
-          <el-table-column property="grade" label="成绩">
+          <el-table-column property="res" label="成绩">
             <template slot-scope="scope">
-              <el-input-number :step="0.1" :max="100" :controls="false"></el-input-number>
+              <el-input-number :step="0.1" :min="1" :max="100" v-model="scope.row.res" @blur="transmitGrade(scope.row)" :controls="false"></el-input-number>
             </template>
           </el-table-column>
         </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="gradeModal = false">取 消</el-button>
-          <el-button type="primary" @click="gradeModal = false">确 定</el-button>
+          <el-button @click="saveAnswerGrade">保存</el-button>
+          <el-button type="primary" @click="issueAnswerGrade">发布</el-button>
         </span>
       </el-dialog>
       <!-- 修改课程 -->
@@ -160,17 +180,30 @@
         </el-row>
         <el-table :data="courseJsonData" :row-key="(row) => {return row.id}" @selection-change="handleSelectionCourse" height="260">
           <el-table-column
-          :reserve-selection="true"
-            type="selection">
+            type="selection"
+            :selectable="selectable"
+            :reserve-selection="true">
           </el-table-column>
           <el-table-column property="typename" width="140" label="课程分类"></el-table-column>
           <el-table-column property="coursename" width="140" label="课程名称"></el-table-column>
-          <el-table-column property="persons" width="130" label="选择讲师"></el-table-column>
+          <el-table-column property="persons" width="130" label="选择讲师">
+            <template slot-scope="scope">
+              <el-select :disabled="checkRowStatus(scope.row)" v-model="scope.row.persons">
+                <el-option
+                  v-for="(item, index) in teachingOptions"
+                  :key="index"
+                  :label="item.name"
+                  :value="item.name">
+                </el-option>
+              </el-select>
+            </template>
+          </el-table-column>
           <el-table-column property="ctime" label="选择课程时间">
             <template slot-scope="scope">
               <el-date-picker
                 v-model="scope.row.ctime"
                 :clearable="false"
+                :disabled="checkRowStatus(scope.row)"
                 size="mini"
                 type="datetime"
                 placeholder="选择日期时间">
@@ -180,8 +213,8 @@
           <el-table-column property="local" label="地点" width="90"></el-table-column>
         </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="saveCourse">保存</el-button>
-          <el-button type="primary" @click="issueCourse">发布</el-button>
+          <!-- <el-button @click="saveCourse">保存</el-button> -->
+          <el-button type="primary" @click="issueNewCourse">发布</el-button>
         </span>
       </el-dialog>
       <!-- 考试成绩上传 -->
@@ -194,27 +227,27 @@
             考试：<span>{{ examName }}</span>
           </p>
         </div>
-        <el-table :data="classobj" @selection-change="handleSelectionCourse" height="260">
+        <el-table :data="classobj" height="260">
           <el-table-column type="index" label="序号"></el-table-column>
           <el-table-column property="scname" label="学生姓名"></el-table-column>
           <el-table-column property="res" label="成绩">
             <template slot-scope="scope">
-              <el-input-number v-model="scope.row.res" :min="1" :max="100" :controls="false" :step="0.1" :step-strictly="true"></el-input-number>
+              <el-input-number v-model="scope.row.res" @blur="handleGrade(scope.row, scope.row.uid, scope.row.scname, scope.row.res, scope.row.live)" :min="1" :max="100" :controls="false" :step="0.1" :step-strictly="true"></el-input-number>
             </template>
           </el-table-column>
           <el-table-column property="live" label="等级">
             <template slot-scope="scope">
-              <span v-if="scope.row.res > 90">A</span>
-              <span v-if="scope.row.res < 90 && scope.row.res > 80">B</span>
-              <span v-if="scope.row.res < 80 && scope.row.res > 70">C</span>
-              <span v-if="scope.row.res < 70 && scope.row.res > 60">D</span>
-              <span v-if="scope.row.res < 60">E</span>
+              <el-button v-model="scope.row.live" class="btn_grade" v-if="scope.row.res > 90">A</el-button>
+              <el-button v-model="scope.row.live" class="btn_grade" v-if="scope.row.res < 90 && scope.row.res > 80">B</el-button>
+              <el-button v-model="scope.row.live" class="btn_grade" v-if="scope.row.res < 80 && scope.row.res > 70">C</el-button>
+              <el-button v-model="scope.row.live" class="btn_grade" v-if="scope.row.res < 70 && scope.row.res > 60">D</el-button>
+              <el-button v-model="scope.row.live" class="btn_grade" v-if="scope.row.res < 60">E</el-button>
             </template>
           </el-table-column>
         </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="examGradeUploadDialog = false">保存</el-button>
-          <el-button type="primary" @click="examGradeUploadDialog = false">发布</el-button>
+          <el-button @click="saveExamApi">保存</el-button>
+          <el-button type="primary" @click="issueExamApi">发布</el-button>
         </span>
       </el-dialog>
       <el-dialog title="" width="80%" :visible.sync="imgBigModal">
@@ -313,6 +346,7 @@
 </template>
 
 <script>
+import { formatDate } from '../../../../utils/formatDate'
 export default {
   name: 'manager',
   data () {
@@ -333,32 +367,34 @@ export default {
       courseSearch: '', // 搜索课程内容
       courseJsonData: [], // 课程列表
       deleteTeachingPlanId: '',
+      teachingPlanId: '', // 教学计划Id
+      modifyCourseNewObj: {
+        eventid: '',
+        info: []
+      },
       teachingPlanSearch: '', // 搜索
       teachingPlanStatus: '全部', // 计划状态
       teachingPlanJsonData: [],
+      courseIdList: [], // 已经选择的课程Id
       reverse: true,
       classobj: [],
+      teachingOptions: [], // 老师Options
       planSection: [],
       planExamSection: [],
       activities: [],
       uploadMp4Id: '',
+      uploadExamMp4Id: '',
+      testInfoId: '', // 考试Id
+      examList: [],
       schoolName: '',
       classname: '',
       examName: '',
+      FileType: '', // course 课程 test 考试
       courseName: '',
       loading: false,
       showBigImgUrl: '',
-      medalJsonData: [
-        {
-          id: 1,
-          name: '张三',
-          img: [
-            'http://mrcba.bbddp.com/upload/logo2.png',
-            'http://mrcba.bbddp.com/upload/logo2.png'
-          ],
-          grade: 90
-        }
-      ],
+      courseAnswer: [], // 课后习题
+      answerGrade: [], // 课后习题List
       img: ''
     }
   },
@@ -440,59 +476,10 @@ export default {
         this.requestTeachingPlanJsonData()
       })
     },
-    // 前端校验文件上传是否符合条件
-    file_info_check (file) {
-      var ret = ''
-      if (file === undefined) {
-        ret = ''
-      }
-      // eslint-disable-next-line camelcase
-      var max_file_size = 100 * 1024 * 1024
-      // eslint-disable-next-line camelcase
-      if (file.size > max_file_size) {
-        ret = '文件不能大于2Mb'
-      }
-      var typeMp4 = '.mp4'
-      if (file.name.indexOf(typeMp4) === -1) {
-        ret = '视屏格式要求是.mp4'
-      } else {
-        ret = 'success'
-        return ret
-      }
-      return ret
-    },
-    uploadMp4 (fileObj) {
-      this.loading = true
-      let fileStatus = this.file_info_check(fileObj.file)
-      if (fileStatus === 'success') {
-        let formData = new FormData()
-        formData.append('type', 3)
-        formData.append('typename', 'course_info')
-        formData.append('course_info_id', this.uploadMp4Id)
-        formData.append('file', fileObj.file)
-        this.$axios.post('/mp4', formData, {
-          headers: {
-            'Content-type': 'multipart/form-data'
-          }
-        }).then(res => {
-          console.log(res.data.path)
-          console.log(`${res.data.path}?x-oss-process=video/snapshot,t_1,f_jpg,m_fast,ar_auto`)
-          this.img = `${res.data.path}?x-oss-process=video/snapshot,t_1,f_jpg,m_fast,ar_auto`
-          this.loading = false
-        }).catch(err => {
-          this.loading = false
-        })
-      } else {
-        this.$message({
-          message: fileStatus,
-          type: 'error'
-        })
-        this.loading = false
-      }
-    },
     // 编辑教学计划
     showInserModal(id) {
       this.requestPlanDetail(id)
+      this.teachingPlanId = id
       this.courseList = false
       this.courseTCode = false
       this.courseSection = true
@@ -509,6 +496,9 @@ export default {
         'eventid': id
       })).then(res => {
         this.planSection = res.data.data[0].courseinfo
+        this.planSection.forEach(element => {
+          this.courseIdList.push(element.courseid)
+        });
         this.planExamSection = res.data.data[0].testinfo
         this.classobj = res.data.data[0].classobj
         this.activities = res.data.data
@@ -516,7 +506,8 @@ export default {
         this.classname = this.activities[0].classname.classname
       })
     },
-    check(id) {
+    check(id, type) {
+      this.FileType = type
       this.uploadMp4Id = id
     },
     // 查看课程二维码  
@@ -533,13 +524,18 @@ export default {
     // 查看学生成绩
     lookStudentGrade(obj) {
       this.gradeModal = true
-      // this.classesName = 
       this.courseName = obj.coursename
-      // this.gradeList = 
+      this.courseAnswer = obj.res
     },
     bigImg(item) {
       this.imgBigModal = true
       this.showBigImgUrl = item
+    },
+    // 讲师Options
+    requestTeachingApi() {
+      this.$axios.post(this.$global.sApi + '/roles').then(res => {
+        this.teachingOptions = res.data.data[0]
+      })
     },
     // 搜索课程列表
     searchCourse() {
@@ -566,16 +562,52 @@ export default {
         'perpage': 9999
       })).then(res => {
         this.courseJsonData = res.data.data.data
+        this.courseJsonData.forEach(course => {
+          this.planSection.forEach(planCourse => {
+            if (course.id == planCourse.courseid) {
+              course.persons = planCourse.persons
+              course.ctime = planCourse.time
+              course.local = planCourse.local
+            }
+          });
+        });
       })
     },
     // 选择课程
     handleSelectionCourse(val) {
-     console.log(val)
+      this.modifyCourseNewObj.eventid = this.teachingPlanId
+      const obj = {
+        courseid: '',
+        time: '',
+        persons: ''
+      }
+      this.modifyCourseNewObj.info = []
+      val.forEach(element => {
+        obj.courseid = element.id
+        obj.time = formatDate(new Date(element.ctime), 'yyyy-MM-dd hh:mm:ss')
+        obj.persons = element.persons || '暂无'
+        this.modifyCourseNewObj.info.push(obj)
+      });      
+    },
+    // 发布课程
+    issueNewCourse() {
+      this.$axios.post(this.$global.sApi + '/addcoures', JSON.stringify({
+        'eventid': this.modifyCourseNewObj.eventid,
+        'info': this.modifyCourseNewObj.info
+      })).then(res => {
+        this.$message({
+          message: '修改成功',
+          type: 'success'
+        })
+        this.requestPlanDetail(this.teachingPlanId)
+        this.courseDialog = false
+      })
     },
     // 修改课程
     modifyCourse() {
       this.courseDialog = true
       this.requestCourseJsonData()
+      this.requestTeachingApi()
     },
     // 保存课程
     saveCourse() {
@@ -589,6 +621,174 @@ export default {
     uploadExamGrade(obj) {
       this.examGradeUploadDialog = true
       this.examName = obj.testname
+      this.testInfoId = obj.test_info_id
+    },
+    // 禁用
+    checkRowStatus(row) {
+      if (this.courseIdList.includes(row.id)) {
+        return true
+      } else {
+        return false
+      }
+    },
+    // 已选课程置灰
+    selectable(row, index) {
+      if (this.courseIdList.includes(row.id)) {
+        return false
+      } else {
+        return true
+      }
+    },
+    // 配置成绩数据
+    handleGrade(row, uid, scname, res, live) {
+      var live = 'A'
+      if (res > 90) {
+        live = 'A'
+      } else if (res < 90 && res > 80) {
+        live = 'B'
+      } else if (res < 80 && res > 70) {
+        live = 'C'
+      } else if (res < 70 && res > 60) {
+        live = 'D'
+      } else {
+        live = 'E'
+      }
+      const obj = {
+        uid: uid,
+        name: scname,
+        res: res,
+        live: live
+      }
+      this.examList.forEach(element => {
+        if (element.uid == uid) {
+          this.examList.splice(this.examList.indexOf(element), 1)
+        }
+      });
+      this.examList.push(obj)
+    },
+    // 保存成绩
+    saveExamApi() {
+      this.$axios.post(this.$global.sApi + '/addres', JSON.stringify({
+        'test_info_id': this.testInfoId,
+        'info': this.examList,
+        'status': 1
+      })).then(res => {
+        this.$message({
+          message: '保存成功',
+          type: 'success'
+        })
+        this.examGradeUploadDialog = false
+      })
+    },
+    // 提交成绩
+    issueExamApi() {
+      this.$axios.post(this.$global.sApi + '/addres', JSON.stringify({
+        'test_info_id': this.testInfoId,
+        'info': this.examList,
+        'status': 2
+      })).then(res => {
+        this.$message({
+          message: '发布成功',
+          type: 'success'
+        })
+        this.examGradeUploadDialog = false
+      })
+    },
+    // 传递成绩
+    transmitGrade(row) {
+      this.answerGrade.forEach(element => {
+        if (element.uid == row.id) {
+          this.answerGrade.splice(this.answerGrade.indexOf(element), 1)
+        }
+      });
+      const obj = {
+        uid: row.id,
+        res: row.res
+      }
+      this.answerGrade.push(obj)
+    },
+    // 保存课后习题
+    saveAnswerGrade() {
+      console.log(this.courseAnswer[0].course_info_id)
+      this.$axios.post(this.$global.sApi + '/addstures', JSON.stringify({
+        'course_info_id': this.courseAnswer[0].course_info_id,
+        'info': this.answerGrade,
+        'type': 1
+      })).then(res => {
+        this.$message({
+          message: '保存成功',
+          type: 'success'
+        })
+        this.gradeModal = false
+      })
+    },
+    // 发布课后习题
+    issueAnswerGrade() {
+      this.$axios.post(this.$global.sApi + '/addstures', JSON.stringify({
+        'course_info_id': this.courseAnswer[0].course_info_id,
+        'info': this.answerGrade,
+        'type': 2
+      })).then(res => {
+        this.$message({
+          message: '发布成功',
+          type: 'success'
+        })
+        this.gradeModal = false
+      })
+    },
+    // 前端校验文件上传是否符合条件
+    file_info_check (file) {
+      var ret = ''
+      if (file === undefined) {
+        ret = ''
+      }
+      // eslint-disable-next-line camelcase
+      var max_file_size = 100 * 1024 * 1024
+      // eslint-disable-next-line camelcase
+      if (file.size > max_file_size) {
+        ret = '文件不能大于100Mb'
+      }
+      var typeMp4 = '.mp4'
+      if (file.name.indexOf(typeMp4) === -1) {
+        ret = '视屏格式要求是.mp4'
+      } else {
+        ret = 'success'
+        return ret
+      }
+      return ret
+    },
+    // 课程上传视屏
+    uploadMp4 (fileObj) {
+      this.loading = true
+      let fileStatus = this.file_info_check(fileObj.file)
+      if (fileStatus === 'success') {
+        let formData = new FormData()
+        formData.append('type', 3)
+        formData.append('typename', 'course_info')
+        formData.append('fname', this.FileType)
+        formData.append('course_info_id', this.uploadMp4Id)
+        formData.append('file', fileObj.file)
+        this.$axios.post('/mp4', formData, {
+          headers: {
+            'Content-type': 'multipart/form-data'
+          }
+        }).then(res => {
+          this.$message({
+            message: '上传成功',
+            type: 'success'
+          })
+          this.requestPlanDetail(this.teachingPlanId)
+          this.loading = false
+        }).catch(err => {
+          this.loading = false
+        })
+      } else {
+        this.$message({
+          message: fileStatus,
+          type: 'error'
+        })
+        this.loading = false
+      }
     }
   }
 }

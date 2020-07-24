@@ -264,6 +264,11 @@ export default {
   padding: 0;
 }
 
+.btn_grade {
+  background-color: transparent;
+  border: none; 
+}
+
 .date-btn .date-img {
   width: 32px;
   height: 40px;

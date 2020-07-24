@@ -260,12 +260,17 @@ export default {
     },
     // 显示删除Dialog
     showDeleteModal(exam) {
-      if (exam.status == '2') {
-        this.deleteDialog = true
-      } else {
-        this.deleteExamId = parseInt(exam.id)
-        this.affirmDeleteDialog = true
-      }
+      this.$axios.post(this.$global.sApi + '/typeres', JSON.stringify({
+        'type': 'test',
+        'testid': exam.id
+      })).then(res => {
+        if (!res.data.msg) { 
+          this.deleteDialog = true
+        } else {
+          this.deleteExamId = parseInt(exam.id)
+          this.affirmDeleteDialog = true
+        }
+      })
     },
     affirmDeleteExam() {
       this.$axios.post(this.$global.sApi + '/addtest', JSON.stringify({

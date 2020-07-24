@@ -198,7 +198,7 @@
           </span> 吧！</span>
         </el-col>
       </el-row>
-      <el-table :data="firmJsonData" row-key="id" ref="firmTable" @selection-change="handleSelectionFirm" height="260">
+      <el-table :data="firmJsonData" row-key="id" ref="firmTable" @select-all="selectAll" @selection-change="handleSelectionFirm" height="260">
         <el-table-column
           type="index" label="序号" width="200"></el-table-column>
         <el-table-column
@@ -228,7 +228,7 @@
       </el-row>
       <el-table :data="courseJsonData" :row-key="(row) => {return row.id}" @selection-change="handleSelectionCourse" height="260">
         <el-table-column
-        :reserve-selection="true"
+          :reserve-selection="true"
           type="selection">
         </el-table-column>
         <el-table-column property="typename" width="140" label="课程分类"></el-table-column>
@@ -686,6 +686,20 @@ export default {
         })
       }
     },
+    // 全选企业
+    selectAll() {
+      if (this.firmJsonData.length > 10) {
+        this.$message({
+          message: '企业不得超过10家，无法全选',
+          type: 'warning'
+        })
+        this.$refs.firmTable.clearSelection()
+        this.defaultSelected = []
+        this.copyFirm = []
+        this.firmCheck = []
+        this.teachingPlanForm.attendFirm = []
+      }
+    },
     handleSelectionFirm(val) {
       val.forEach(element => {
         if (!this.defaultSelected.includes(element.id)) {
@@ -693,8 +707,6 @@ export default {
           this.copyFirm.push(element)
         }
       });
-      // console.log(this.defaultSelected)
-      // console.log(this.copyFirm)
       this.firmCheck = this.copyFirm
     },
     checkFirm() {
@@ -819,6 +831,7 @@ export default {
         'brief': this.teachingPlanForm.teachingPlanInfo == '' ? '暂无' : this.teachingPlanForm.teachingPlanInfo,
         'header': this.teachingPlanForm.imageUrl,
         'schoolid': parseInt(this.teachingPlanForm.teachingPlanSchool),
+        'school': sessionStorage.getItem('schName'),
         'medal': medalList.substring(0, medalList.length - 1),
         'points': this.teachingPlanForm.teachingPlanIntegral,
         'res': this.teachingPlanForm.teachingPlanGrade,

@@ -293,12 +293,17 @@ export default {
     },
     // 显示删除Dialog
     showDeleteModal(obj) {
-      if (obj.status == '2') {
-        this.deleteDialog = true
-      } else {
-        this.deleteCourseId = parseInt(obj.id)
-        this.affirmDeleteDialog = true
-      }
+      this.$axios.post(this.$global.sApi + '/typeres', JSON.stringify({
+        'type': 'test',
+        'testid': obj.id
+      })).then(res => {
+        if (!res.data.msg) { 
+          this.deleteDialog = true
+        } else {
+          this.deleteCourseId = parseInt(obj.id)
+          this.affirmDeleteDialog = true
+        }
+      })
     },
     affirmDeleteCourse() {
       this.$axios.post(this.$global.sApi + '/course', JSON.stringify({
